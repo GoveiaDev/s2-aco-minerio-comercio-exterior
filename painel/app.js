@@ -98,21 +98,21 @@
   const esconde = () => dica.style.opacity = 0;
 
   // colunas por ano no cartão: ano escolhido em cor cheia, demais claros; o ano parcial mais claro
-  function spark(id, vals, cor, destaque, fmt) {
+  function spark(id, vals, cor, destaque, fmt, rot, parcial = -1) {
     const el = $(id), n = vals.length, ok = vals.filter(v => v != null && isFinite(v));
     if (ok.length < 2) { el.innerHTML = ''; el.onmousemove = null; return; }
     const mx = Math.max(...ok, 0), mn = Math.min(...ok, 0), Y = v => 28 - (v - mn) / (mx - mn || 1) * 26, w = 120 / n;
     let g = '';
     vals.forEach((v, i) => {
       if (v == null || !isFinite(v)) return;
-      const y0 = Y(0), y1 = Y(v), sel = i === destaque, parc = i === n - 1;
+      const y0 = Y(0), y1 = Y(v), sel = i === destaque, parc = i === parcial;
       g += `<rect x="${(i * w + w * .14).toFixed(2)}" y="${Math.min(y0, y1).toFixed(2)}" width="${(w * .72).toFixed(2)}" height="${Math.max(.8, Math.abs(y1 - y0)).toFixed(2)}" fill="${cor}" opacity="${sel ? 1 : parc ? .22 : .38}"/>`;
     });
     if (mn < 0) g += `<line x1="0" x2="120" y1="${Y(0)}" y2="${Y(0)}" stroke="${cor}" stroke-width=".5" opacity=".6"/>`;
     el.innerHTML = g;
     el.onmousemove = e => {
-      const r = el.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.floor((e.clientX - r.left) / r.width * n))), y = A0 + i;
-      mostra(e, `<b>${y === UA ? rotPer(UA) : y}</b><br>${vals[i] == null ? '—' : fmt(vals[i])}`);
+      const r = el.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.floor((e.clientX - r.left) / r.width * n)));
+      mostra(e, `<b>${rot(i)}</b><br>${vals[i] == null ? '—' : fmt(vals[i])}`);
     };
     el.onmouseleave = esconde;
   }
@@ -137,7 +137,7 @@
     const J = [Pr.m0, Pr.m1], Jant = [Pr.m0 - 12, Pr.m1 - 12], temAnt = Pr.temAnt;
     const atual = soma(IP, f, p, J, c), ant = temAnt ? soma(IP, f, p, Jant, c) : null;
     const anos = []; for (let y = A0; y <= UA; y++) anos.push(y);
-    const anoIdx = Pr.ano ? Pr.ano - A0 : null;
+    const anoIdx = (Pr.ano || UA) - A0;
     const nomeC = c >= 0 ? D.paises[c] : null;
 
     // faixa
@@ -149,44 +149,52 @@
 
     // KPIs
     const perAnt = Pr.rotAnt;
-    const serieAno = fn => anos.map(y => fn(janela(y, y === UA ? UM : 12)));
+    // cada coluna = a mesma janela do período escolhido, ano a ano (jan–out com jan–out, 12 meses com 12 meses)
+    const ySel = Pr.ano || UA;
+    const jan = i => { const d = (A0 + i - ySel) * 12, a0 = Pr.m0 + d, a1 = Math.min(Pr.m1 + d, NM - 1); return a0 < 0 || a0 > NM - 1 ? null : [a0, a1]; };
+    const serieAno = fn => anos.map((y, i) => { const w = jan(i); return w ? fn(w) : null; });
+    const rotJ = i => { const w = jan(i); if (!w) return String(A0 + i); const [a0, a1] = w, y0 = A0 + Math.floor(a0 / 12), y1 = A0 + Math.floor(a1 / 12);
+      if (a0 % 12 === 0 && y0 === y1) return a1 % 12 === 11 ? String(y0) : `jan–${MN[a1 % 12]} ${y0}`;
+      return `${MN[a0 % 12]}/${y0}–${MN[a1 % 12]}/${y1}`; };
+    const parcial = Pr.m1 + (UA - ySel) * 12 > NM - 1 ? UA - A0 : -1;
     $('kVolRot').textContent = `Volume ${f ? 'importado' : 'exportado'}`;
     $('kVol').textContent = ton(atual.t); delta('dVol', ant && ant.t > 0 ? atual.t / ant.t - 1 : null, fPct);
     $('kVolTxt').textContent = ant ? `${perAnt}: ${ton(ant.t)}` : '—';
-    spark('sVol', serieAno(j => soma(IP, f, p, j, c).t), '#12239e', anoIdx, v => ton(v));
+    spark('sVol', serieAno(j => soma(IP, f, p, j, c).t), '#12239e', anoIdx, v => ton(v), rotJ, parcial);
     $('kFob').textContent = usd(atual.v); delta('dFob', ant && ant.v > 0 ? atual.v / ant.v - 1 : null, fPct);
     $('kFobTxt').textContent = ant ? `${perAnt}: ${usd(ant.v)}` : '—';
-    spark('sFob', serieAno(j => soma(IP, f, p, j, c).v), '#118dff', anoIdx, v => usd(v));
+    spark('sFob', serieAno(j => soma(IP, f, p, j, c).v), '#118dff', anoIdx, v => usd(v), rotJ, parcial);
     const pr = preco(atual.v, atual.t), prA = ant && preco(ant.v, ant.t);
     $('kPre').textContent = pr ? 'US$ ' + nf(pr) + '/t' : '—'; delta('dPre', pr && prA ? pr / prA - 1 : null, fPct);
     $('kPreTxt').textContent = prA ? `${perAnt}: US$ ${nf(prA)}/t` : '—';
-    spark('sPre', serieAno(j => { const s = soma(IP, f, p, j, c); return s.t > 0 ? preco(s.v, s.t) : null; }), '#e66c37', anoIdx, v => 'US$ ' + nf(v) + '/t');
+    spark('sPre', serieAno(j => { const s = soma(IP, f, p, j, c); return s.t > 0 ? preco(s.v, s.t) : null; }), '#e66c37', anoIdx, v => 'US$ ' + nf(v) + '/t', rotJ, parcial);
 
     const loc = porLocal(IP, f, p, J), totT = [...loc.values()].reduce((s, x) => s + x.t, 0);
     const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t);
     const part = (k, j) => { const tt = soma(IP, f, p, j).t; return tt ? soma(IP, f, p, j, k).t / tt : null; };
     const totA = ant ? soma(IP, f, p, Jant).t : 0;
-    const alvo = c >= 0 ? c : ord.length ? ord[0][0] : -1;
+    const semChina = c < 0 && ord.length > 1 && ord[0][0] === CHINA;
+    const alvo = c >= 0 ? c : semChina ? ord[1][0] : ord.length ? ord[0][0] : -1;
     if (alvo >= 0) {
       const x = loc.get(alvo) || { t: 0 }, sh = totT ? x.t / totT : 0, shA = temAnt && totA ? soma(IP, f, p, Jant, alvo).t / totA : null;
       const pos = ord.findIndex(([k]) => k === alvo) + 1;
-      $('kTopRot').textContent = c >= 0 ? `Participação · ${nomeC}` : (f ? 'Maior origem' : 'Maior destino');
+      $('kTopRot').textContent = c >= 0 ? `Participação · ${nomeC}` : (f ? 'Maior origem' : 'Maior destino') + (semChina ? ' fora a China' : '');
       $('kTop').textContent = c >= 0 ? pp(sh) : D.paises[alvo];
       delta('dTop', shA != null ? sh - shA : null, fPP);
       $('kTopTxt').textContent = c >= 0 ? (pos ? `${pos}º ${parceiro(f)} de ${ord.length} países` : `sem ${nomeFlx(f)} no período`) : `${pp(sh)} do volume · ${ton(x.t)}`;
-      spark('sTop', serieAno(j => part(alvo, j)), '#744ec2', anoIdx, v => pp(v) + ' do volume');
+      spark('sTop', serieAno(j => part(alvo, j)), '#744ec2', anoIdx, v => pp(v) + ' do volume', rotJ, parcial);
     } else { $('kTop').textContent = '—'; $('kTopTxt').textContent = 'sem fluxo no período'; $('sTop').innerHTML = ''; delta('dTop', null); }
 
     const ch = loc.get(CHINA), shC = totT ? (ch ? ch.t : 0) / totT : null, shCA = temAnt && totA ? soma(IP, f, p, Jant, CHINA).t / totA : null;
     $('kChi').textContent = shC != null ? pp(shC) : '—'; delta('dChi', shC != null && shCA != null ? shC - shCA : null, fPP);
     $('kChiTxt').textContent = shCA != null ? `do volume · ${perAnt}: ${pp(shCA)}` : `do volume de ${nomeFlx(f)}`;
-    spark('sChi', serieAno(j => part(CHINA, j)), '#197278', anoIdx, v => pp(v) + ' do volume');
+    spark('sChi', serieAno(j => part(CHINA, j)), '#197278', anoIdx, v => pp(v) + ' do volume', rotJ, parcial);
 
     const ex = soma(IP, 0, p, J, c).t, im = soma(IP, 1, p, J, c).t, s0 = ex - im;
     const sA = temAnt ? soma(IP, 0, p, Jant, c).t - soma(IP, 1, p, Jant, c).t : null;
     $('kSal').textContent = sinalT(s0); delta('dSal', sA != null ? s0 - sA : null, v => ton(v));
     $('kSalTxt').textContent = `exportou ${ton(ex)} · importou ${ton(im)}` + (sA != null ? ` · ${perAnt}: ${sinalT(sA)}` : '') + (nomeC ? ` · com ${nomeC}` : '');
-    spark('sSal', serieAno(j => soma(IP, 0, p, j, c).t - soma(IP, 1, p, j, c).t), '#f2c80f', anoIdx, v => sinalT(v));
+    spark('sSal', serieAno(j => soma(IP, 0, p, j, c).t - soma(IP, 1, p, j, c).t), '#f2c80f', anoIdx, v => sinalT(v), rotJ, parcial);
 
     // leitura
     let txt = `${Pr.em}, o Brasil ${f ? 'importou' : 'exportou'} <b>${ton(atual.t)}</b> de ${prod.toLowerCase()}${nomeC ? (f ? ' (origem: ' : ' (destino: ') + nomeC + ')' : ''}`;
