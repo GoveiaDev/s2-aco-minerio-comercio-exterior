@@ -6,7 +6,7 @@ de 2019, e exportou 1,0 milhão. O saldo foi de +0,8 milhão de toneladas em 201
 mudou: a China foi de 69% para 42% do volume, e o Vietnã de 1% para 16%.**
 
 **[→ Abrir o painel Aço e Minério no Comércio Exterior](https://goveiadev.github.io/s2-aco-minerio-comercio-exterior/painel/)**.
-Escolha produto, fluxo e ano; clique num país para ver só ele.
+Abre no período corrente (o ano até o último mês publicado). Escolha produto, fluxo e período, incluindo os últimos 12 meses; clique num país para ver só ele.
 
 ![Capa do projeto](capa.png)
 
@@ -98,6 +98,19 @@ posto na fábrica é menor. Mesmo assim, a direção mostra de onde vem a press�
   base.
 - **2026 vai até outubro** e os meses mais recentes podem ser revisados pelo MDIC.
 
+## Atualização
+
+O painel se atualiza sozinho. Toda segunda-feira, um GitHub Actions
+(`.github/workflows/atualizar.yml`):
+
+1. pergunta à API do Comex Stat qual é o último mês publicado;
+2. baixa a série toda de novo, com `baixar_dados.py` (o MDIC revisa meses recentes);
+3. gera `painel/dados.js`, com `exportar.py`;
+4. publica só se algo mudou.
+
+O topo do painel mostra até que mês vão os dados e a data da última atualização.
+Para forçar a atualização: aba Actions → "Atualizar dados do Comex Stat" → Run workflow.
+
 ## Como rodar
 
 ```bash
@@ -105,10 +118,11 @@ python -m venv .venv
 .venv/Scripts/pip install -r ../requirements.txt
 .venv/Scripts/python baixar_dados.py dados
 .venv/Scripts/jupyter nbconvert --to notebook --execute --inplace analise.ipynb
+.venv/Scripts/python exportar.py   # só o painel, sem o notebook
 .venv/Scripts/python capa.py
 ```
 
-O notebook exporta `painel/dados.js`. O painel é HTML estático: rode
+O notebook e o `exportar.py` geram `painel/dados.js`. O painel é HTML estático: rode
 `python -m http.server` na pasta e abra `painel/`.
 
 ---

@@ -2,7 +2,7 @@
   const D = window.DADOS, $ = id => document.getElementById(id);
   const A0 = D.ano0, UA = D.ultimo.ano, UM = D.ultimo.mes, NM = (UA - A0) * 12 + UM; // meses com dado
   const P = D.produtos, nP = P.length, CHINA = D.paises.indexOf('China');
-  const st = { prod: P.indexOf('Aço plano'), flx: 1, ano: UA - 1, pais: -1 };
+  const st = { prod: P.indexOf('Aço plano'), flx: 1, ano: UA, pais: -1 }; // abre no período corrente
 
   // índices: por fluxo/produto → linhas
   const idx = (rows) => { const o = {}; for (const r of rows) (o[r[0] + '|' + r[1]] ||= []).push(r); return o; };
@@ -18,10 +18,22 @@
   const pp = v => nf(v * 100, 0) + '%';
   const preco = (mil, t) => t > 0 ? mil * 1000 / t : null;
 
-  // período do ano escolhido: ano cheio, ou jan..UM se for o último ano
+  // períodos: 'u12' = últimos 12 meses com dado; ano = ano cheio, ou jan..último mês no ano corrente.
+  // A comparação é sempre com o mesmo intervalo 12 meses antes.
+  const MN = ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
   const meses = a => a === UA ? UM : 12;
-  const janela = (a, m = meses(st.ano)) => [(a - A0) * 12, (a - A0) * 12 + m - 1];
-  const rotPer = a => a === UA ? `jan–${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][UM - 1]} ${a}` : String(a);
+  const janela = (a, m) => [(a - A0) * 12, (a - A0) * 12 + m - 1];
+  const rotPer = a => a === UA ? `jan–${MN[UM - 1]} ${a}` : String(a);
+  function periodo(v) {
+    if (v === 'u12') {
+      const m0 = NM - 12, i0 = m0 % 12, a0 = A0 + Math.floor(m0 / 12);
+      return { m0, m1: NM - 1, ano: null, temAnt: m0 >= 12, rot: `12 meses até ${MN[UM - 1]}/${UA}`, em: `Nos 12 meses até ${MN[UM - 1]}/${UA}`,
+               rotAnt: `${MN[i0]}/${a0 - 1}–${MN[UM - 1]}/${UA - 1}`, contra: 'os 12 meses anteriores' };
+    }
+    const y = +v, m0 = (y - A0) * 12;
+    return { m0, m1: m0 + meses(y) - 1, ano: y, temAnt: y > A0, rot: rotPer(y), em: `Em ${rotPer(y)}`,
+             rotAnt: y === UA ? `jan–${MN[UM - 1]} ${y - 1}` : String(y - 1), contra: y === UA ? `jan–${MN[UM - 1]} ${y - 1}` : String(y - 1) };
+  }
 
   function soma(I, f, p, [m0, m1], local = -1) {
     let t = 0, v = 0;
@@ -42,9 +54,10 @@
   // ---------- filtros ----------
   const fP = $('fProd'), fA = $('fAno');
   P.forEach((p, i) => fP.add(new Option(p, i)));
-  for (let a = UA; a >= A0; a--) fA.add(new Option(a === UA ? `${a} (jan–${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][UM - 1]})` : a, a));
+  fA.add(new Option(`Últimos 12 meses (até ${MN[UM - 1]}/${UA})`, 'u12'));
+  for (let a = UA; a >= A0; a--) fA.add(new Option(a === UA ? `${a} (jan–${MN[UM - 1]}) · corrente` : a, a));
   fP.onchange = () => { st.prod = +fP.value; st.pais = -1; render(); };
-  fA.onchange = () => { st.ano = +fA.value; render(); };
+  fA.onchange = () => { st.ano = fA.value === 'u12' ? 'u12' : +fA.value; render(); };
   document.querySelectorAll('#fFlx button').forEach(b => b.onclick = () => { st.flx = +b.dataset.f; st.pais = -1; render(); });
 
   // ---------- filtros em lista suspensa (o select fica escondido e guarda o valor) ----------
@@ -120,21 +133,22 @@
   function render() {
     fP.value = st.prod; fA.value = st.ano; dds.forEach(d => d.sync());
     document.querySelectorAll('#fFlx button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === st.flx));
-    const { prod: p, flx: f, ano: a, pais: c } = st, prod = P[p], nm = meses(a);
-    const J = janela(a), Jant = janela(a - 1, nm), temAnt = a > A0;
+    const { prod: p, flx: f, pais: c } = st, prod = P[p], Pr = periodo(st.ano);
+    const J = [Pr.m0, Pr.m1], Jant = [Pr.m0 - 12, Pr.m1 - 12], temAnt = Pr.temAnt;
     const atual = soma(IP, f, p, J, c), ant = temAnt ? soma(IP, f, p, Jant, c) : null;
     const anos = []; for (let y = A0; y <= UA; y++) anos.push(y);
-    const anoIdx = a - A0;
+    const anoIdx = Pr.ano ? Pr.ano - A0 : null;
     const nomeC = c >= 0 ? D.paises[c] : null;
 
     // faixa
     const pl = P.indexOf('Aço plano');
     const sal = y => { const j = janela(y, 12); return soma(IP, 0, pl, j).t - soma(IP, 1, pl, j).t; };
-    $('faixaMeta').innerHTML = `Aço plano: saldo de <b>${mt(sal(2019))}</b> em 2019 para <b>${mt(sal(UA - 1))}</b> em ${UA - 1} · exportado menos importado · fonte: Comex Stat (MDIC)`;
-    $('escopo').innerHTML = `<b>${prod}</b> · ${nomeFlx(f)} · ${rotPer(a)}${nomeC ? ' · ' + nomeC : ''}${a === UA ? ' · comparado com jan–' + ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][UM - 1] + ' ' + (a - 1) : ''}`;
+    const at = D.gerado ? ` · atualizado em ${D.gerado.split('-').reverse().join('/')}` : '';
+    $('faixaMeta').innerHTML = `Aço plano: saldo de <b>${mt(sal(2019))}</b> em 2019 para <b>${mt(sal(UA - 1))}</b> em ${UA - 1} · fonte: Comex Stat (MDIC) · <b>dados até ${MN[UM - 1]}/${UA}</b>${at}`;
+    $('escopo').innerHTML = `<b>${prod}</b> · ${nomeFlx(f)} · ${Pr.rot}${nomeC ? ' · ' + nomeC : ''}${temAnt ? ' · comparado com ' + Pr.contra : ''}`;
 
     // KPIs
-    const perAnt = a === UA ? `jan–${['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][UM - 1]} ${a - 1}` : String(a - 1);
+    const perAnt = Pr.rotAnt;
     const serieAno = fn => anos.map(y => fn(janela(y, y === UA ? UM : 12)));
     $('kVolRot').textContent = `Volume ${f ? 'importado' : 'exportado'}`;
     $('kVol').textContent = ton(atual.t); delta('dVol', ant && ant.t > 0 ? atual.t / ant.t - 1 : null, fPct);
@@ -175,8 +189,8 @@
     spark('sSal', serieAno(j => soma(IP, 0, p, j, c).t - soma(IP, 1, p, j, c).t), '#f2c80f', anoIdx, v => sinalT(v));
 
     // leitura
-    let txt = `Em ${rotPer(a)}, o Brasil ${f ? 'importou' : 'exportou'} <b>${ton(atual.t)}</b> de ${prod.toLowerCase()}${nomeC ? (f ? ' (origem: ' : ' (destino: ') + nomeC + ')' : ''}`;
-    if (ant && ant.t > 0) txt += `, <b>${(atual.t >= ant.t ? '+' : '−') + fPct(Math.abs(atual.t / ant.t - 1))}</b> contra ${a === UA ? 'o mesmo período de ' : ''}${a - 1}`;
+    let txt = `${Pr.em}, o Brasil ${f ? 'importou' : 'exportou'} <b>${ton(atual.t)}</b> de ${prod.toLowerCase()}${nomeC ? (f ? ' (origem: ' : ' (destino: ') + nomeC + ')' : ''}`;
+    if (ant && ant.t > 0) txt += `, <b>${(atual.t >= ant.t ? '+' : '−') + fPct(Math.abs(atual.t / ant.t - 1))}</b> contra ${Pr.contra}`;
     if (pr) txt += `, a <b>US$ ${nf(pr)} por tonelada</b> FOB`;
     txt += '.';
     if (!nomeC && ord.length) txt += ` ${f ? 'A maior origem' : 'O maior destino'} foi ${D.paises[ord[0][0]]}, com ${pp(ord[0][1].t / totT)} do volume.`;
@@ -201,7 +215,7 @@
     mx = Math.ceil(mx / passo) * passo; mn = Math.floor(mn / passo) * passo;
     const X = i => m.l + (W - m.l - m.r) * (i - i0) / (NM - 1 - i0), Y = v => m.t + (H - m.t - m.b) * (1 - (v - mn) / (mx - mn || 1));
     let g = '';
-    const a0 = Math.max(i0, (st.ano - A0) * 12), a1 = (st.ano - A0) * 12 + meses(st.ano) - 1;
+    const Pr = periodo(st.ano), a0 = Math.max(i0, Pr.m0), a1 = Pr.m1;
     if (a1 >= i0) g += `<rect x="${X(a0)}" y="${m.t}" width="${Math.max(2, X(a1) - X(a0))}" height="${H - m.t - m.b}" fill="#deecf9" opacity=".7"/>`;
     for (let v = mn; v <= mx + passo / 2; v += passo) g += `<line class="rule" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${o.fmt(v)}</text>`;
     const pulo = W > 560 ? 1 : 2;
@@ -271,7 +285,7 @@
   function renderPauta(J, Jant, temAnt) {
     const f = st.flx;
     $('tPauta').textContent = `A pauta de ${nomeFlx(f)} em US$`;
-    $('pautaSub').textContent = `${rotPer(st.ano)} · valor FOB e variação contra ${st.ano - 1}`;
+    const Pr = periodo(st.ano); $('pautaSub').textContent = `${Pr.rot} · valor FOB e variação contra ${Pr.contra}`;
     const l = P.map((nome, k) => { const s = soma(IP, f, k, J), sa = temAnt ? soma(IP, f, k, Jant) : null; return { k, nome, v: s.v, va: sa && sa.v }; }).sort((x, y) => y.v - x.v);
     const mx = l[0].v || 1;
     $('pauta').innerHTML = l.map(x => `<button type="button" class="linha${x.k === st.prod ? ' sel' : ''}" data-k="${x.k}"><span class="n">${x.nome}</span><span class="trilho"><i style="width:${(x.v / mx * 62).toFixed(1)}%;background:${x.k === st.prod ? '#12239e' : '#118dff'}"></i><b>${usd(x.v)}</b>${x.va > 0 ? `<em class="${x.v >= x.va ? 'sobe' : 'desce'}">${pct(x.v / x.va - 1)}</em>` : ''}</span></button>`).join('');
@@ -280,7 +294,7 @@
   function renderPaises(loc, totT, Jant, temAnt) {
     const f = st.flx, p = st.prod;
     $('tPaises').textContent = f ? 'De onde vem' : 'Para onde vai';
-    $('paisesSub').textContent = `${P[p]} · ${rotPer(st.ano)} · ${[...loc.values()].filter(x => x.t > 0).length} países`;
+    $('paisesSub').textContent = `${P[p]} · ${periodo(st.ano).rot} · ${[...loc.values()].filter(x => x.t > 0).length} países`;
     $('chipPais').innerHTML = st.pais >= 0 ? `<span class="chip">${D.paises[st.pais]}<button type="button" aria-label="Limpar país" id="limpaPais">×</button></span>` : '';
     if (st.pais >= 0) $('limpaPais').onclick = () => { st.pais = -1; render(); };
     const antL = temAnt ? porLocal(IP, f, p, Jant) : new Map();
@@ -298,7 +312,7 @@
   }
   function renderUfs(J) {
     const f = st.flx, loc = porLocal(IU, f, st.prod, J);
-    $('ufSub').textContent = `${f ? 'UF do importador' : 'UF produtora'} · maiores em volume, ${rotPer(st.ano)}`;
+    $('ufSub').textContent = `${f ? 'UF do importador' : 'UF produtora'} · maiores em volume, ${periodo(st.ano).rot}`;
     const tot = [...loc.values()].reduce((s, x) => s + x.t, 0);
     const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t).slice(0, 10), mx = ord.length ? ord[0][1].t : 1;
     const sig = n => ({ 'Minas Gerais': 'MG', 'São Paulo': 'SP', 'Rio de Janeiro': 'RJ', 'Espírito Santo': 'ES', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS', 'Bahia': 'BA', 'Pará': 'PA', 'Maranhão': 'MA', 'Ceará': 'CE', 'Pernambuco': 'PE', 'Goiás': 'GO', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Amazonas': 'AM', 'Distrito Federal': 'DF', 'Paraíba': 'PB', 'Rio Grande do Norte': 'RN', 'Alagoas': 'AL', 'Sergipe': 'SE', 'Piauí': 'PI', 'Tocantins': 'TO', 'Rondônia': 'RO', 'Acre': 'AC', 'Amapá': 'AP', 'Roraima': 'RR', 'Não Declarada': 'N/D', 'Mercadoria Nacionalizada': 'Nac.', 'Reexportação': 'Reex.' }[n] || n.slice(0, 5));

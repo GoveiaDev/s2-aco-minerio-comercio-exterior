@@ -1,0 +1,51 @@
+# Atualiza o painel com o último mês do Comex Stat.
+# Roda toda segunda-feira (o MDIC publica o mês anterior na primeira semana do mês) e pode ser disparado à mão.
+# Só faz commit se os dados mudaram; depois pede ao GitHub Pages para publicar de novo.
+name: Atualizar dados do Comex Stat
+
+on:
+  schedule:
+    - cron: "0 12 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Instalar pandas
+        run: pip install "pandas==3.0.6"
+
+      - name: Baixar do Comex Stat
+        run: |
+          mkdir -p dados
+          python baixar_dados.py dados
+
+      - name: Gerar painel/dados.js
+        run: python exportar.py
+
+      - name: Publicar se mudou
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if git diff --quiet -- painel/dados.js; then
+            echo "Sem dado novo."
+            exit 0
+          fi
+          ATE=$(python -c "import json;d=json.loads(open('painel/dados.js',encoding='utf-8').read()[15:].rstrip().rstrip(';'));print(f\"{d['ultimo']['mes']:02d}/{d['ultimo']['ano']}\")")
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add painel/dados.js
+          git commit -m "Dados do Comex Stat até $ATE"
+          git push
+          gh api -X POST "repos/${{ github.repository }}/pages/builds" || true
