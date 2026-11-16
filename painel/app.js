@@ -106,7 +106,9 @@
   function delta(id, v, f) {
     const e = $(id);
     if (v == null || !isFinite(v)) { e.textContent = ''; e.className = 'delta'; return; }
-    e.className = 'delta ' + (v >= 0 ? 'up' : 'down'); e.textContent = (v >= 0 ? '▲ ' : '▼ ') + f(Math.abs(v));
+    const t = f(Math.abs(v));
+    if (t === f(0)) { e.className = 'delta zero'; e.textContent = '= ' + t; return; }
+    e.className = 'delta ' + (v >= 0 ? 'up' : 'down'); e.textContent = (v >= 0 ? '▲ ' : '▼ ') + t;
   }
   const fPct = v => nf(v * 100, v < .1 ? 1 : 0) + '%', fPP = v => nf(v * 100, 0) + ' p.p.';
   const sinalT = t => (t >= 0 ? '+' : '−') + ton(Math.abs(t));
@@ -174,7 +176,7 @@
 
     // leitura
     let txt = `Em ${rotPer(a)}, o Brasil ${f ? 'importou' : 'exportou'} <b>${ton(atual.t)}</b> de ${prod.toLowerCase()}${nomeC ? (f ? ' (origem: ' : ' (destino: ') + nomeC + ')' : ''}`;
-    if (ant && ant.t > 0) txt += `, <b>${pct(atual.t / ant.t - 1)}</b> contra ${a === UA ? 'o mesmo período de ' : ''}${a - 1}`;
+    if (ant && ant.t > 0) txt += `, <b>${(atual.t >= ant.t ? '+' : '−') + fPct(Math.abs(atual.t / ant.t - 1))}</b> contra ${a === UA ? 'o mesmo período de ' : ''}${a - 1}`;
     if (pr) txt += `, a <b>US$ ${nf(pr)} por tonelada</b> FOB`;
     txt += '.';
     if (!nomeC && ord.length) txt += ` ${f ? 'A maior origem' : 'O maior destino'} foi ${D.paises[ord[0][0]]}, com ${pp(ord[0][1].t / totT)} do volume.`;
@@ -190,7 +192,7 @@
   const rotMes = i => `${MES[i % 12]}/${A0 + Math.floor(i / 12)}`;
   function grafico(id, series, o) {
     const el = $(id), box = el.parentNode.getBoundingClientRect(), i0 = o.i0 || 0;
-    const W = Math.max(280, Math.round(box.width)), H = Math.max(150, Math.round(box.height)), m = { l: 50, r: 70, t: 16, b: 20 };
+    const W = Math.max(280, Math.round(box.width)), H = Math.max(150, Math.round(box.height)), m = { l: 50, r: 96, t: 16, b: 20 };
     const vals = series.flatMap(s => s.v.slice(i0)).filter(v => v != null && isFinite(v));
     if (!vals.length) { el.innerHTML = ''; return; }
     let mx = Math.max(...vals), mn = o.zero ? Math.min(...vals, 0) : Math.min(...vals);
@@ -229,7 +231,7 @@
       let d = '', pen = false, ult = -1;
       s.v.forEach((v, i) => { if (i < i0 || v == null || !isFinite(v)) { pen = false; return; } d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); pen = true; ult = i; });
       g += `<path d="${d}" fill="none" stroke="${s.cor}" stroke-width="${o.fino ? 1.4 : 2.4}" stroke-linejoin="round"/>`;
-      if (ult >= 0) fins.push({ x: X(ult), y: Y(s.v[ult]), cor: s.cor, txt: o.fmt(s.v[ult], true) });
+      if (ult >= 0) fins.push({ x: X(ult), y: Y(s.v[ult]), cor: s.cor, txt: o.fmt(s.v[ult], true) + (o.sufixo || '') });
     }
     fins.sort((p, q) => p.y - q.y);
     for (let k = 1; k < fins.length; k++) { const prev = fins[k - 1].ty || fins[k - 1].y; if (fins[k].y - prev < 14) fins[k].ty = prev + 14; }
@@ -256,12 +258,12 @@
     const fT = (v, longo) => longo ? ton(v) : (v === 0 ? '0' : v >= 1e6 ? nf(v / 1e6, v >= 1e7 ? 0 : 1) + ' Mt' : nf(v / 1e3) + ' mil');
     const ve = doze ? rolar(Array.from(e.t)) : Array.from(e.t), vi = doze ? rolar(Array.from(i.t)) : Array.from(i.t);
     grafico('svgSerie', [{ nome: 'exportação', cor: '#118dff', v: ve }, { nome: 'importação', cor: '#e66c37', v: vi }],
-      { fmt: fT, titulo: doze ? 'soma de 12 meses' : 'no mês', i0: doze ? 11 : 0, zero: true, area: true, cruz: doze, fino: !doze });
+      { fmt: fT, titulo: doze ? 'soma de 12 meses' : 'no mês', i0: doze ? 11 : 0, zero: true, area: true, cruz: doze, fino: !doze, sufixo: doze ? ' · 12m' : '' });
     // preço: some quando o volume de 12 meses é muito baixo (evita picos de poucas toneladas)
     const pr = s => { const t = rolar(Array.from(s.t)), v = rolar(Array.from(s.v)), lim = Math.max(0, ...t.filter(x => x != null)) * .03; return t.map((x, k) => x != null && x > lim && x > 0 ? v[k] * 1000 / x : null); };
     $('precoSub').textContent = `US$ FOB por tonelada, média de 12 meses${nomeC}. Sem frete, seguro e imposto; meses de volume muito baixo ficam de fora.`;
     grafico('svgPreco', [{ nome: 'exportação', cor: '#118dff', v: pr(e) }, { nome: 'importação', cor: '#e66c37', v: pr(i) }],
-      { fmt: (v, longo) => (longo ? 'US$ ' : '') + nf(v) + (longo ? '/t' : ''), titulo: 'preço médio de 12 meses', i0: 11, zero: false });
+      { fmt: (v, longo) => (longo ? 'US$ ' : '') + nf(v) + (longo ? '/t' : ''), titulo: 'preço médio de 12 meses', i0: 11, zero: false, sufixo: ' · 12m' });
   }
   document.querySelectorAll('#fModo button').forEach(b => b.onclick = () => { st.modo = +b.dataset.m === 1 ? 1 : 12; renderSeries(); });
 
@@ -299,7 +301,7 @@
     $('ufSub').textContent = `${f ? 'UF do importador' : 'UF produtora'} · maiores em volume, ${rotPer(st.ano)}`;
     const tot = [...loc.values()].reduce((s, x) => s + x.t, 0);
     const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t).slice(0, 10), mx = ord.length ? ord[0][1].t : 1;
-    const sig = n => ({ 'Minas Gerais': 'MG', 'São Paulo': 'SP', 'Rio de Janeiro': 'RJ', 'Espírito Santo': 'ES', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS', 'Bahia': 'BA', 'Pará': 'PA', 'Maranhão': 'MA', 'Ceará': 'CE', 'Pernambuco': 'PE', 'Goiás': 'GO', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Amazonas': 'AM', 'Distrito Federal': 'DF', 'Paraíba': 'PB', 'Rio Grande do Norte': 'RN', 'Alagoas': 'AL', 'Sergipe': 'SE', 'Piauí': 'PI', 'Tocantins': 'TO', 'Rondônia': 'RO', 'Acre': 'AC', 'Amapá': 'AP', 'Roraima': 'RR' }[n] || n.slice(0, 6));
+    const sig = n => ({ 'Minas Gerais': 'MG', 'São Paulo': 'SP', 'Rio de Janeiro': 'RJ', 'Espírito Santo': 'ES', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS', 'Bahia': 'BA', 'Pará': 'PA', 'Maranhão': 'MA', 'Ceará': 'CE', 'Pernambuco': 'PE', 'Goiás': 'GO', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Amazonas': 'AM', 'Distrito Federal': 'DF', 'Paraíba': 'PB', 'Rio Grande do Norte': 'RN', 'Alagoas': 'AL', 'Sergipe': 'SE', 'Piauí': 'PI', 'Tocantins': 'TO', 'Rondônia': 'RO', 'Acre': 'AC', 'Amapá': 'AP', 'Roraima': 'RR', 'Não Declarada': 'N/D', 'Mercadoria Nacionalizada': 'Nac.', 'Reexportação': 'Reex.' }[n] || n.slice(0, 5));
     $('ufs').innerHTML = ord.length ? ord.map(([k, x]) => `<div class="linha" title="${D.ufs[k]}"><span class="n">${sig(D.ufs[k])}</span><span class="trilho"><i style="width:${(x.t / mx * 55).toFixed(1)}%;background:#744ec2"></i><b>${pp(x.t / tot)}</b><em>${ton(x.t)}</em></span></div>`).join('') : '<div class="panel-foot">Sem dado no período.</div>';
     aparar($('ufs'));
   }

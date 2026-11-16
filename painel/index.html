@@ -29,9 +29,9 @@
   .v-serie{grid-column:span 7}.v-preco{grid-column:span 5}.v-pauta{grid-column:span 4}.v-paises{grid-column:span 5}.v-ufs{grid-column:span 3}
   .vrow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}
   .delta{font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px;white-space:nowrap;line-height:1.5}
-  .delta.up{background:#deecf9;color:#12239e}.delta.down{background:#fde7dd;color:#a8401a}
+  .delta.up{background:#deecf9;color:#12239e}.delta.zero{background:#edebe9;color:#605e5c}.k-marinho .delta.zero{background:rgba(255,255,255,.12);color:#c9d3e6}.delta.down{background:#fde7dd;color:#a8401a}
   .k-marinho .delta.up{background:rgba(255,255,255,.14);color:#cfe3ff}.k-marinho .delta.down{background:rgba(242,200,15,.18);color:#f2c80f}
-  .kpi svg.cols{height:24px;margin-top:auto;padding-top:3px;cursor:crosshair}
+  .kpi svg.cols{height:24px;margin-top:auto;padding-top:3px}
   .anos{display:flex;justify-content:space-between;font-size:9px;color:var(--apoio);line-height:1;margin-top:1px}.k-marinho .anos{color:#8fa0c2}
   .cab-dir{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
   .botoes.mini{height:22px;border-color:var(--borda)}.botoes.mini button{color:var(--texto-2);border-right-color:var(--borda);font-size:11px;padding:0 8px}
@@ -59,13 +59,13 @@
   }
   @media(max-width:1099px){.v-serie,.v-preco,.v-paises{grid-column:1/-1}.v-pauta,.v-ufs{grid-column:span 6}.tabela-box{max-height:360px}}
   @media(max-width:760px){.v-pauta,.v-ufs{grid-column:1/-1}}
-  .lista{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:space-around}
-  .barras .linha{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:1px 2px;border:0;background:transparent;text-align:left;border-radius:3px}
+  .lista{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:space-around;overflow-y:auto;overflow-x:hidden}
+  .barras .linha{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:0 2px;flex:none;border:0;background:transparent;text-align:left;border-radius:3px}
   @media(max-width:560px){.barras .linha{grid-template-columns:104px minmax(0,1fr)}}
-  .barras.estreito .linha{grid-template-columns:30px minmax(0,1fr)}
+  .barras.estreito .linha{grid-template-columns:38px minmax(0,1fr)}
   .barras .linha:hover{background:#f3f2f1}.barras .linha.sel{background:var(--sel)}
   .barras .n{font-size:12px;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}.barras .linha.sel .n{font-weight:700}
-  .barras .trilho{display:flex;align-items:center;gap:6px;height:18px;min-width:0}.barras .trilho i{display:block;height:15px;border-radius:0 2px 2px 0;min-width:2px;flex:none}
+  .barras .trilho{display:flex;align-items:center;gap:6px;height:17px;min-width:0}.barras .trilho i{display:block;height:13px;border-radius:0 2px 2px 0;min-width:2px;flex:none}
   .barras .trilho b{font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--texto)}.barras .trilho em{font-style:normal;font-size:10.5px;color:var(--texto-2);white-space:nowrap}
   .tabela-box{overflow:auto;flex:1 1 auto;min-height:0;border-top:1px solid var(--borda)}
   table{font-size:11.5px}th{padding:5px 6px}td{padding:4px 6px}
@@ -130,7 +130,7 @@
     <li><b>2026 vai até outubro.</b> Com 2026 escolhido, as comparações usam janeiro a outubro dos dois anos.</li>
     <li><b>FOB não é o preço posto na fábrica.</b> No importado faltam frete, seguro, imposto de importação e internação. O preço médio do grupo também muda com a mistura de produtos.</li>
     <li><b>O dado mostra o quê, não o porquê.</b> Volume e origem mudam com defesa comercial, câmbio e preço internacional ao mesmo tempo. País é a origem declarada; aço revestido num terceiro país aparece com a origem desse país.</li>
-    <li><b>Comércio exterior não é consumo.</b> Para a fatia do importado no mercado brasileiro faltam produção e vendas internas. Estado é a UF do produto: produtor na exportação, importador na importação.</li>
+    <li><b>Comércio exterior não é consumo.</b> Para a fatia do importado no mercado brasileiro faltam produção e vendas internas. Estado é a UF do produto: produtor na exportação, importador na importação. N/D = UF não declarada; Nac. = mercadoria nacionalizada; Reex. = reexportação.</li>
     <li><b>Autor:</b> Ramon Goveia · dados aplicados ao mercado da indústria pesada · <a href="https://github.com/GoveiaDev/s2-aco-minerio-comercio-exterior">código, notebook e limitações</a>.</li></ul>
   <form method="dialog"><button>Fechar</button></form>
 </dialog>
