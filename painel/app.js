@@ -3,6 +3,7 @@
   const A0 = D.ano0, UA = D.ultimo.ano, UM = D.ultimo.mes, NM = (UA - A0) * 12 + UM; // meses com dado
   const P = D.produtos, nP = P.length, CHINA = D.paises.indexOf('China');
   const st = { prod: P.indexOf('Aço plano'), flx: 1, ano: UA, pais: -1 }; // abre no período corrente
+  const paisUI = { busca: '', todos: false };
 
   // índices: por fluxo/produto → linhas
   const idx = (rows) => { const o = {}; for (const r of rows) (o[r[0] + '|' + r[1]] ||= []).push(r); return o; };
@@ -11,11 +12,11 @@
 
   // ---------- formato ----------
   const nf = (v, d = 0) => v.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d });
-  const ton = t => { const a = Math.abs(t); return a >= 1e6 ? nf(t / 1e6, a >= 1e8 ? 0 : 1) + ' Mt' : a >= 1e3 ? nf(t / 1e3, a >= 1e5 ? 0 : 1) + ' mil t' : nf(t) + ' t'; };
-  const usd = m => { const a = Math.abs(m); return a >= 1e6 ? 'US$ ' + nf(m / 1e6, 1) + ' bi' : a >= 1e3 ? 'US$ ' + nf(m / 1e3, a >= 1e5 ? 0 : 1) + ' mi' : 'US$ ' + nf(m) + ' mil'; }; // m em mil US$
+  const ton = t => { const a = Math.abs(t); return a >= 1e6 ? nf(t / 1e6, a >= 1e8 ? 0 : 1) + ' Mt' : a >= 1e3 ? nf(t / 1e3, a >= 1e5 ? 0 : 1) + ' mil t' : nf(t, a > 0 && a < 1 ? 3 : 0) + ' t'; };
+  const usd = m => { const a = Math.abs(m); return a >= 1e6 ? 'US$ ' + nf(m / 1e6, 1) + ' bi' : a >= 1e3 ? 'US$ ' + nf(m / 1e3, a >= 1e5 ? 0 : 1) + ' mi' : a >= 1 ? 'US$ ' + nf(m) + ' mil' : 'US$ ' + nf(m * 1000); }; // m em mil US$
   const mt = t => (t >= 0 ? '+' : '−') + nf(Math.abs(t) / 1e6, 1) + ' Mt';
   const pct = v => (v >= 0 ? '+' : '−') + nf(Math.abs(v) * 100, 0) + '%';
-  const pp = v => nf(v * 100, 0) + '%';
+  const pp = v => v > 0 && v < .01 ? '<1%' : nf(v * 100, 0) + '%';
   const preco = (mil, t) => t > 0 ? mil * 1000 / t : null;
 
   // períodos: 'u12' = últimos 12 meses com dado; ano = ano cheio, ou jan..último mês no ano corrente.
@@ -146,6 +147,8 @@
     const at = D.gerado ? ` · atualizado em ${D.gerado.split('-').reverse().join('/')}` : '';
     $('faixaMeta').innerHTML = `Aço plano: saldo de <b>${mt(sal(2019))}</b> em 2019 para <b>${mt(sal(UA - 1))}</b> em ${UA - 1} · fonte: Comex Stat (MDIC) · <b>dados até ${MN[UM - 1]}/${UA}</b>${at}`;
     $('escopo').innerHTML = `<b>${prod}</b> · ${nomeFlx(f)} · ${Pr.rot}${nomeC ? ' · ' + nomeC : ''}${temAnt ? ' · comparado com ' + Pr.contra : ''}`;
+    $('paisAtivo').textContent = nomeC ? `${f ? 'Origem' : 'Destino'}: ${nomeC} · volumes, valores, saldo e séries filtrados` : 'Brasil · todos os países';
+    $('limpaPais').hidden = !nomeC;
 
     // KPIs
     const perAnt = Pr.rotAnt;
@@ -205,7 +208,7 @@
     txt += ` Saldo do produto no período: <b>${(s0 >= 0 ? '+' : '')}${ton(s0).replace('-', '−')}</b>.`;
     $('leitura').innerHTML = txt;
 
-    renderSeries(); renderPauta(J, Jant, temAnt); renderPaises(loc, totT, Jant, temAnt); renderUfs(J);
+    renderSeries(); renderPauta(J, Jant, temAnt); renderPaises(); renderUfs(J);
   }
 
   // ---------- séries ----------
@@ -244,8 +247,9 @@
       }
       if (ult > 0) {
         const imp = I.v[ult] > E.v[ult], x = X(ult), dir = x > W * .55;
+        const annX = W < 400 ? W / 2 : x + (dir ? -6 : 6), anchor = W < 400 ? 'middle' : dir ? 'end' : 'start';
         g += `<line x1="${x}" x2="${x}" y1="${m.t - 4}" y2="${H - m.b}" stroke="#252423" stroke-dasharray="3 3" opacity=".5"/>`
-          + `<text class="ann" x="${x + (dir ? -6 : 6)}" y="${m.t + 20}" text-anchor="${dir ? 'end' : 'start'}" fill="${imp ? '#b5461c' : '#12239e'}">${rotMes(ult)}: ${W < 640 ? (imp ? 'importação > exportação' : 'exportação > importação') : (imp ? 'importação passa a exportação' : 'exportação volta a superar')}</text>`;
+          + `<text class="ann" x="${annX}" y="${m.t + 20}" text-anchor="${anchor}" fill="${imp ? '#b5461c' : '#12239e'}">${rotMes(ult)}: ${W < 640 ? (imp ? 'importação > exportação' : 'exportação > importação') : (imp ? 'importação passa a exportação' : 'exportação volta a superar')}</text>`;
       }
     }
     const fins = [];
@@ -276,6 +280,8 @@
     const e = mensal(0, p, c), i = mensal(1, p, c);
     document.querySelectorAll('#fModo button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.m === (doze ? 12 : 1)));
     $('tSerie').textContent = `${P[p]}: exportação × importação${nomeC}`;
+    $('svgSerie').setAttribute('aria-label', `${P[p]}${nomeC}: volume exportado e importado, ${doze ? 'soma móvel de 12 meses' : 'toneladas por mês'}`);
+    $('svgPreco').setAttribute('aria-label', `${P[p]}${nomeC}: preço médio FOB por tonelada, média móvel de 12 meses`);
     $('serieSub').textContent = doze ? `Toneladas, soma dos últimos 12 meses (tira a sazonalidade), dez/${A0} a ${MES[UM - 1]}/${UA}.` : `Toneladas por mês, jan/${A0} a ${MES[UM - 1]}/${UA}.`;
     const fT = (v, longo) => longo ? ton(v) : (v === 0 ? '0' : v >= 1e6 ? nf(v / 1e6, v >= 1e7 ? 0 : 1) + ' Mt' : nf(v / 1e3) + ' mil');
     const ve = doze ? rolar(Array.from(e.t)) : Array.from(e.t), vi = doze ? rolar(Array.from(i.t)) : Array.from(i.t);
@@ -293,34 +299,50 @@
   function renderPauta(J, Jant, temAnt) {
     const f = st.flx;
     $('tPauta').textContent = `A pauta de ${nomeFlx(f)} em US$`;
-    const Pr = periodo(st.ano); $('pautaSub').textContent = `${Pr.rot} · valor FOB e variação contra ${Pr.contra}`;
+    const Pr = periodo(st.ano); $('pautaSub').textContent = `Brasil · todos os países · ${Pr.rot} · valor FOB${temAnt ? ' e variação contra ' + Pr.contra : ' · sem base anterior'}`;
     const l = P.map((nome, k) => { const s = soma(IP, f, k, J), sa = temAnt ? soma(IP, f, k, Jant) : null; return { k, nome, v: s.v, va: sa && sa.v }; }).sort((x, y) => y.v - x.v);
     const mx = l[0].v || 1;
-    $('pauta').innerHTML = l.map(x => `<button type="button" class="linha${x.k === st.prod ? ' sel' : ''}" data-k="${x.k}"><span class="n">${x.nome}</span><span class="trilho"><i style="width:${(x.v / mx * 62).toFixed(1)}%;background:${x.k === st.prod ? '#12239e' : '#118dff'}"></i><b>${usd(x.v)}</b>${x.va > 0 ? `<em class="${x.v >= x.va ? 'sobe' : 'desce'}">${pct(x.v / x.va - 1)}</em>` : ''}</span></button>`).join('');
+    $('pauta').innerHTML = l.map(x => `<button type="button" class="linha${x.k === st.prod ? ' sel' : ''}" data-k="${x.k}" aria-pressed="${x.k === st.prod}"><span class="n">${x.nome}</span><span class="trilho"><span class="barra-pauta"><i style="width:${(x.v / mx * 100).toFixed(1)}%;background:${x.k === st.prod ? '#12239e' : '#118dff'}"></i></span><b>${usd(x.v)}</b>${x.va > 0 ? `<em class="${x.v >= x.va ? 'sobe' : 'desce'}">${pct(x.v / x.va - 1)}</em>` : ''}</span></button>`).join('');
     $('pauta').querySelectorAll('.linha').forEach(b => b.onclick = () => { st.prod = +b.dataset.k; st.pais = -1; render(); });
   }
-  function renderPaises(loc, totT, Jant, temAnt) {
-    const f = st.flx, p = st.prod;
+  function renderPaises() {
+    const f = st.flx, p = st.prod, Pr = periodo(st.ano), temAnt = Pr.temAnt;
+    const loc = porLocal(IP, f, p, [Pr.m0, Pr.m1]);
+    const totT = [...loc.values()].reduce((s, x) => s + x.t, 0);
+    const Jant = [Pr.m0 - 12, Pr.m1 - 12];
     $('tPaises').textContent = f ? 'De onde vem' : 'Para onde vai';
-    $('paisesSub').textContent = `${P[p]} · ${periodo(st.ano).rot} · ${[...loc.values()].filter(x => x.t > 0).length} países`;
-    $('chipPais').innerHTML = st.pais >= 0 ? `<span class="chip">${D.paises[st.pais]}<button type="button" aria-label="Limpar país" id="limpaPais">×</button></span>` : '';
-    if (st.pais >= 0) $('limpaPais').onclick = () => { st.pais = -1; render(); };
+    $('paisesSub').textContent = `${P[p]} · ${Pr.rot} · participação no total do Brasil`;
     const antL = temAnt ? porLocal(IP, f, p, Jant) : new Map();
-    const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t), top = ord.slice(0, 20), mx = top.length ? top[0][1].t : 1;
+    const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t);
+    const normalizar = s => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR');
+    const busca = normalizar(paisUI.busca.trim());
+    const top = busca ? ord.filter(([k]) => normalizar(D.paises[k]).includes(busca)) : paisUI.todos ? ord : ord.slice(0, 20);
+    const mx = ord.length ? ord[0][1].t : 1;
+    $('contagemPaises').textContent = busca ? `${top.length} de ${ord.length} países encontrados` : top.length < ord.length ? `20 maiores de ${ord.length} países` : `Todos os ${ord.length} países`;
+    $('verPaises').hidden = !!busca || ord.length <= 20;
+    $('verPaises').textContent = paisUI.todos ? 'Ver 20 maiores' : `Ver todos (${ord.length})`;
+    $('verPaises').setAttribute('aria-expanded', String(paisUI.todos));
     $('tPaisCorpo').innerHTML = top.map(([k, x]) => {
       const a = antL.get(k), v = a && a.t > 0 ? x.t / a.t - 1 : null;
-      return `<tr data-k="${k}" class="${k === st.pais ? 'sel' : ''}"><td>${D.paises[k]}</td><td class="barra-cel"><i style="width:${(x.t / mx * 80).toFixed(1)}px"></i><span>${ton(x.t)}</span></td><td class="${v == null ? '' : v >= 0 ? 'sobe' : 'desce'}">${v == null ? 'novo' : pct(v)}</td><td>${pp(x.t / totT)}</td><td>${nf(preco(x.v, x.t))}</td></tr>`;
-    }).join('') || `<tr><td colspan="5">Sem ${nomeFlx(f)} no período.</td></tr>`;
+      const variacao = !temAnt ? 'sem base anterior' : v == null ? 'novo' : pct(v);
+      return `<tr data-k="${k}" class="${k === st.pais ? 'sel' : ''}"><td><button type="button" class="pais-btn" aria-pressed="${k === st.pais}">${D.paises[k]}</button></td><td class="barra-cel"><i style="width:${(x.t / mx * 80).toFixed(1)}px"></i><span>${ton(x.t)}</span></td><td class="${v == null ? '' : v >= 0 ? 'sobe' : 'desce'}">${variacao}</td><td>${pp(x.t / totT)}</td><td>${nf(preco(x.v, x.t))}</td></tr>`;
+    }).join('') || `<tr><td colspan="5">${busca ? 'Nenhum país encontrado.' : 'Sem ' + nomeFlx(f) + ' no período.'}</td></tr>`;
     const totV = [...loc.values()].reduce((s, x) => s + x.v, 0);
-    $('tPaisTotal').innerHTML = totT ? `<tr><td>Total · ${ord.length} países</td><td>${ton(totT)}</td><td></td><td>100%</td><td>${nf(preco(totV, totT))}</td></tr>` : '';
-    $('tPaisCorpo').querySelectorAll('tr[data-k]').forEach(tr => tr.onclick = () => { const k = +tr.dataset.k; st.pais = st.pais === k ? -1 : k; render(); });
+    $('tPaisTotal').innerHTML = totT ? `<tr><td>Total Brasil · ${ord.length} países</td><td>${ton(totT)}</td><td></td><td>100%</td><td>${nf(preco(totV, totT))}</td></tr>` : '';
+    $('tPaisCorpo').querySelectorAll('tr[data-k]').forEach(tr => tr.onclick = () => {
+      const k = +tr.dataset.k; st.pais = st.pais === k ? -1 : k; render();
+      $('tPaisCorpo').querySelector(`tr[data-k="${k}"] button`)?.focus({ preventScroll: true });
+    });
   }
+  $('buscaPais').oninput = e => { paisUI.busca = e.target.value; renderPaises(); };
+  $('verPaises').onclick = () => { paisUI.todos = !paisUI.todos; renderPaises(); };
+  $('limpaPais').onclick = () => { st.pais = -1; render(); $('buscaPais').focus(); };
   function aparar(el) { // tela única: mostra só as linhas que cabem
     while (el.children.length > 3 && el.scrollHeight > el.clientHeight + 1) el.lastElementChild.remove();
   }
   function renderUfs(J) {
     const f = st.flx, loc = porLocal(IU, f, st.prod, J);
-    $('ufSub').textContent = `${f ? 'UF do importador' : 'UF produtora'} · maiores em volume, ${periodo(st.ano).rot}`;
+    $('ufSub').textContent = `Brasil · todos os países · ${f ? 'UF do importador' : 'UF produtora'} · maiores em volume, ${periodo(st.ano).rot}`;
     const tot = [...loc.values()].reduce((s, x) => s + x.t, 0);
     const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t).slice(0, 10), mx = ord.length ? ord[0][1].t : 1;
     const sig = n => ({ 'Minas Gerais': 'MG', 'São Paulo': 'SP', 'Rio de Janeiro': 'RJ', 'Espírito Santo': 'ES', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS', 'Bahia': 'BA', 'Pará': 'PA', 'Maranhão': 'MA', 'Ceará': 'CE', 'Pernambuco': 'PE', 'Goiás': 'GO', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Amazonas': 'AM', 'Distrito Federal': 'DF', 'Paraíba': 'PB', 'Rio Grande do Norte': 'RN', 'Alagoas': 'AL', 'Sergipe': 'SE', 'Piauí': 'PI', 'Tocantins': 'TO', 'Rondônia': 'RO', 'Acre': 'AC', 'Amapá': 'AP', 'Roraima': 'RR', 'Não Declarada': 'N/D', 'Mercadoria Nacionalizada': 'Nac.', 'Reexportação': 'Reex.' }[n] || n.slice(0, 5));
@@ -329,6 +351,11 @@
   }
 
   $('btnSobre').onclick = () => $('sobre').showModal();
+  $('maisIndicadores').onclick = () => {
+    const aberto = document.querySelector('main').classList.toggle('indicadores-abertos');
+    $('maisIndicadores').setAttribute('aria-expanded', String(aberto));
+    $('maisIndicadores').textContent = aberto ? 'Menos indicadores' : 'Mais indicadores';
+  };
   let tRes; addEventListener('resize', () => { clearTimeout(tRes); tRes = setTimeout(render, 120); });
   render();
   window.PAINEL = { st, render };

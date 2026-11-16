@@ -6,7 +6,8 @@ de 2019, e exportou 1,0 milhão. O saldo foi de +0,8 milhão de toneladas em 201
 mudou: a China foi de 69% para 42% do volume, e o Vietnã de 1% para 16%.**
 
 **[→ Abrir o painel Aço e Minério no Comércio Exterior](https://goveiadev.github.io/s2-aco-minerio-comercio-exterior/painel/)**.
-Abre no período corrente (o ano até o último mês publicado). Escolha produto, fluxo e período, incluindo os últimos 12 meses; clique num país para ver só ele.
+Abre no período corrente (o ano até o último mês publicado). Escolha produto, fluxo e período, incluindo os últimos 12 meses. Busque um país ou use **Ver todos**; selecione seu nome com mouse, Enter ou Espaço para filtrar volumes, valores, saldo e séries.
+O país ativo fica indicado no topo. Pauta, estados, ranking e participações continuam como referência nacional, com o escopo identificado. No celular, saldo, volume e preço aparecem primeiro; **Mais indicadores** revela os outros cartões.
 
 ![Capa do projeto](capa.png)
 
@@ -40,6 +41,11 @@ concorrência que ele enfrenta aqui dentro.
    anos.
 5. O painel recalcula tudo no navegador a partir dos dados exportados pelo notebook. Nenhum
    número é digitado à mão.
+6. A exportação preserva as frações de tonelada e de mil US$ da base; o arredondamento
+   ocorre apenas na apresentação. Participações positivas abaixo de 1% aparecem como `<1%`.
+7. O primeiro ano da série mostra **sem base anterior**. **Novo** significa volume
+   positivo no período atual e zero no período anterior disponível, não a primeira
+   operação histórica do país.
 
 **Aço plano, ano inteiro:**
 
@@ -113,17 +119,42 @@ Para forçar a atualização: aba Actions → "Atualizar dados do Comex Stat" �
 
 ## Como rodar
 
-```bash
+Execute na pasta deste projeto. Para gerar o painel no Windows (Python 3.14):
+
+```powershell
 python -m venv .venv
-.venv/Scripts/pip install -r ../requirements.txt
+.venv/Scripts/python -m pip install -r requirements.txt
 .venv/Scripts/python baixar_dados.py dados
-.venv/Scripts/jupyter nbconvert --to notebook --execute --inplace analise.ipynb
-.venv/Scripts/python exportar.py   # só o painel, sem o notebook
+.venv/Scripts/python exportar.py
+.venv/Scripts/python -m http.server 8000 --bind 127.0.0.1
+```
+
+A coleta cria a pasta `dados` automaticamente. Abra `http://127.0.0.1:8000/painel/`.
+Para visualizar a base já versionada, basta iniciar o servidor; não é necessário instalar
+dependências ou baixar os CSVs novamente. No Linux/macOS, troque `.venv/Scripts/python`
+por `.venv/bin/python`.
+
+Notebook e capa são opcionais:
+
+```powershell
+.venv/Scripts/python -m pip install -r requirements-analise.txt
+.venv/Scripts/python -m jupyter nbconvert --to notebook --execute --inplace analise.ipynb
 .venv/Scripts/python capa.py
 ```
 
-O notebook e o `exportar.py` geram `painel/dados.js`. O painel é HTML estático: rode
-`python -m http.server` na pasta e abra `painel/`.
+O notebook chama o mesmo `exportar.py` da atualização automática.
+
+## Verificação
+
+```powershell
+.venv/Scripts/python -m unittest discover -s tests -v
+node --check painel/app.js
+```
+
+Os testes verificam precisão em operações pequenas, agregação de SH4, preço ponderado,
+exportação sem mudanças e criação da pasta de coleta. A API é simulada nesses testes.
+Na interface, conferir 2015 sem base anterior, busca fora dos 20 maiores, seleção e
+limpeza de país por teclado, escopo nacional, modo mensal e layout a 390 e 1440 pixels.
 
 ---
 Ramon Goveia · [linkedin.com/in/ramon-goveia-92266443](https://www.linkedin.com/in/ramon-goveia-92266443) · projeto S2 · dados aplicados ao mercado da indústria pesada

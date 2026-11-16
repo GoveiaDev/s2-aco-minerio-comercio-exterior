@@ -79,6 +79,37 @@
   dialog{border:0;border-radius:8px;max-width:760px;width:calc(100% - 32px);padding:18px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25);color:var(--texto)}
   dialog::backdrop{background:rgba(27,42,71,.45)}dialog h2{font-size:16px;margin-bottom:6px}dialog .method{padding-left:18px}
   dialog form{text-align:right;margin-top:10px}dialog form button{background:var(--azul);color:#fff;border:0;border-radius:4px;padding:6px 14px;font-weight:600}
+  [hidden]{display:none!important}
+  .filtro-pais{padding:0 16px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--faixa-texto)}
+  .filtro-pais button{background:var(--faixa-2);border:1px solid #5d77a8;border-radius:4px;color:#fff;padding:4px 8px}
+  .pais-ferramentas{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px;font-size:11px}
+  .pais-ferramentas input{flex:1 1 130px;min-width:0;width:100%;padding:5px 8px;border:1px solid var(--borda-forte);border-radius:4px}
+  .pais-ferramentas button{padding:4px 8px;border:1px solid var(--borda-forte);border-radius:4px;background:#fff;color:var(--azul-esc)}
+  .pais-btn{border:0;background:transparent;color:var(--azul-esc);text-align:left;padding:2px 0;font:inherit}
+  .pais-btn[aria-pressed="true"]{font-weight:700}
+  #pauta .linha{grid-template-columns:minmax(95px,.9fr) minmax(0,1.4fr)}
+  #pauta .trilho{display:grid;grid-template-columns:minmax(8px,1fr) 70px 62px;height:auto;min-height:20px}
+  .barra-pauta{min-width:0}.barra-pauta i{max-width:100%}
+  .mais-indicadores{display:none}
+  @media(max-width:560px){
+    .faixa-in{padding:10px 12px}.faixa h1{font-size:16px}.faixa .meta{font-size:11px}
+    .slicers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .slicer{min-width:0}.slicer:first-child{grid-column:1/-1}
+    .slicer:last-child{grid-column:1/-1}.info{width:100%}
+    .dd-btn,.botoes,.info{height:40px}.dd-btn{font-size:12px}.dd-btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .botoes button{flex:1;padding:0 6px}.filtro-pais{padding:0 12px 8px;font-size:11px}
+    .kpis .k-marinho{order:-3}.kpis .k-azul{order:-2}.kpis .k-roxo{order:-1}
+    .kpis .kpi{padding:8px 10px}.kpis .kpi svg,.kpis .anos{display:none}
+    .kpis .kpi.secundario{display:none}.indicadores-abertos .kpis .kpi.secundario{display:flex}
+    .mais-indicadores{display:block;background:#fff;border:1px solid var(--borda-forte);border-radius:4px;color:var(--azul-esc);padding:8px}
+    #pauta .linha{padding:5px 2px;grid-template-columns:minmax(90px,1fr) minmax(0,1.4fr)}
+    #pauta .n{white-space:normal;font-size:11.5px;text-align:left}
+    #pauta .trilho{grid-template-columns:1fr auto;gap:4px}
+    #pauta .barra-pauta{grid-column:1/-1;grid-row:2}
+    #pauta .trilho b{font-size:11px}#pauta .trilho em{font-size:10px}
+    .pais-btn{min-height:40px}.pais-ferramentas input,.pais-ferramentas button{min-height:40px}
+    .rodape{flex-wrap:wrap}
+  }
 </style>
 </head>
 <body>
@@ -95,16 +126,18 @@
       <div class="slicer"><button type="button" class="info" id="btnSobre">ⓘ Sobre os dados</button></div>
     </div>
   </div>
+  <div class="filtro-pais"><span id="paisAtivo" aria-live="polite">Brasil · todos os países</span><button type="button" id="limpaPais" hidden>Limpar país</button></div>
 </header>
 <main class="tela">
-  <section class="kpis" aria-live="polite">
+  <section class="kpis" id="indicadores" aria-label="Indicadores do período" aria-live="polite">
     <div class="kpi k-azul"><label id="kVolRot">Volume</label><div class="vrow"><strong id="kVol">—</strong><span class="delta" id="dVol"></span></div><small id="kVolTxt">—</small><svg id="sVol" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
-    <div class="kpi k-dourado"><label>Valor FOB</label><div class="vrow"><strong id="kFob">—</strong><span class="delta" id="dFob"></span></div><small id="kFobTxt">—</small><svg id="sFob" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-dourado secundario"><label>Valor FOB</label><div class="vrow"><strong id="kFob">—</strong><span class="delta" id="dFob"></span></div><small id="kFobTxt">—</small><svg id="sFob" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
     <div class="kpi k-roxo"><label>Preço médio FOB</label><div class="vrow"><strong id="kPre">—</strong><span class="delta" id="dPre"></span></div><small id="kPreTxt">—</small><svg id="sPre" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
-    <div class="kpi k-claro"><label id="kTopRot">Maior parceiro</label><div class="vrow"><strong id="kTop">—</strong><span class="delta" id="dTop"></span></div><small id="kTopTxt">—</small><svg id="sTop" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
-    <div class="kpi k-verde"><label>Participação da China</label><div class="vrow"><strong id="kChi">—</strong><span class="delta" id="dChi"></span></div><small id="kChiTxt">—</small><svg id="sChi" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-claro secundario"><label id="kTopRot">Maior parceiro</label><div class="vrow"><strong id="kTop">—</strong><span class="delta" id="dTop"></span></div><small id="kTopTxt">—</small><svg id="sTop" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-verde secundario"><label>Participação da China</label><div class="vrow"><strong id="kChi">—</strong><span class="delta" id="dChi"></span></div><small id="kChiTxt">—</small><svg id="sChi" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
     <div class="kpi k-marinho"><label>Saldo: exportado − importado</label><div class="vrow"><strong id="kSal">—</strong><span class="delta" id="dSal"></span></div><small id="kSalTxt">—</small><svg id="sSal" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
   </section>
+  <button type="button" class="mais-indicadores" id="maisIndicadores" aria-expanded="false" aria-controls="indicadores">Mais indicadores</button>
   <div class="readout" id="leitura">—</div>
   <div class="grid">
     <section class="panel v-serie"><div class="panel-head"><div><h2 id="tSerie">Exportação × importação</h2><p id="serieSub">—</p></div>
@@ -115,7 +148,8 @@
       <div class="chart"><svg id="svgPreco" role="img" aria-label="Preço médio FOB por tonelada, média móvel de 12 meses"></svg></div></section>
     <section class="panel v-pauta"><div class="panel-head"><div><h2 id="tPauta">A pauta em US$</h2><p id="pautaSub">—</p></div></div>
       <div class="barras lista" id="pauta"></div></section>
-    <section class="panel v-paises"><div class="panel-head"><div><h2 id="tPaises">Países</h2><p id="paisesSub">—</p></div><div id="chipPais"></div></div>
+    <section class="panel v-paises"><div class="panel-head"><div><h2 id="tPaises">Países</h2><p id="paisesSub">—</p></div></div>
+      <div class="pais-ferramentas"><input type="search" id="buscaPais" aria-label="Buscar país" placeholder="Buscar país" aria-controls="tPaisCorpo"><span id="contagemPaises" aria-live="polite"></span><button type="button" id="verPaises" aria-expanded="false" aria-controls="tPaisCorpo">Ver todos</button></div>
       <div class="tabela-box"><table><thead><tr><th>País</th><th>Volume</th><th>vs ano ant.</th><th>Participação</th><th>US$/t</th></tr></thead><tbody id="tPaisCorpo"></tbody><tfoot id="tPaisTotal"></tfoot></table></div></section>
     <section class="panel v-ufs"><div class="panel-head"><div><h2>Estados</h2><p id="ufSub">—</p></div></div>
       <div class="barras estreito lista" id="ufs"></div></section>

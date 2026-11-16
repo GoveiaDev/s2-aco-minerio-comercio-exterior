@@ -1,0 +1,2 @@
+# Geração do painel (mesma versão usada pela atualização automática).
+pandas==3.0.6

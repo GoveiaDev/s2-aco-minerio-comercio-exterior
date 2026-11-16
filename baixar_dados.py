@@ -4,6 +4,7 @@ Uso: python baixar_dados.py dados/
 Gera dados/pais.csv (posição SH4 × país × mês) e dados/uf.csv (posição SH4 × UF × mês).
 """
 import csv, json, sys, time, urllib.request
+from pathlib import Path
 
 API = "https://api-comexstat.mdic.gov.br/general?language=pt"
 SH4 = ["2601", "7201", "7202", "7207", "7208", "7209", "7210", "7211", "7212", "7219", "7220", "7225", "7226",
@@ -17,13 +18,7 @@ def ultimo_mes():
     return int(d["year"]), int(d["monthNumber"])
 
 
-ANO_FIM, MES_FIM = ultimo_mes()
-ANOS = range(2015, ANO_FIM + 1)
-FIM = f"{ANO_FIM}-{MES_FIM:02d}"
-
-
-def consulta(fluxo, ano, detalhe):
-    fim = FIM if ano == ANO_FIM else f"{ano}-12"
+def consulta(fluxo, ano, detalhe, fim):
     corpo = {"flow": fluxo, "monthDetail": True, "period": {"from": f"{ano}-01", "to": fim},
              "filters": [{"filter": "heading", "values": SH4}],
              "details": ["heading", detalhe], "metrics": ["metricFOB", "metricKG"]}
@@ -38,22 +33,26 @@ def consulta(fluxo, ano, detalhe):
 
 
 def main(pasta):
+    pasta = Path(pasta)
+    pasta.mkdir(parents=True, exist_ok=True)
+    ano_fim, mes_fim = ultimo_mes()
+    print(f"Comex Stat com dados até {ano_fim}-{mes_fim:02d}")
     for detalhe, nome in [("country", "pais"), ("state", "uf")]:
         linhas = []
         for fluxo in ["export", "import"]:
-            for ano in ANOS:
-                r = consulta(fluxo, ano, detalhe)
+            for ano in range(2015, ano_fim + 1):
+                fim = f"{ano}-{mes_fim:02d}" if ano == ano_fim else f"{ano}-12"
+                r = consulta(fluxo, ano, detalhe, fim)
                 for x in r:
                     linhas.append([fluxo, x["year"], x["monthNumber"], x["headingCode"], x["heading"],
                                    x.get("country") or x.get("state"), x["metricFOB"], x["metricKG"]])
                 print(nome, fluxo, ano, len(r))
                 time.sleep(1)
-        with open(f"{pasta}/{nome}.csv", "w", newline="", encoding="utf-8") as f:
+        with (pasta / f"{nome}.csv").open("w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["fluxo", "ano", "mes", "sh4", "produto", nome, "fob_usd", "kg"])
             w.writerows(linhas)
 
 
 if __name__ == "__main__":
-    print("Comex Stat com dados até", FIM)
     main(sys.argv[1] if len(sys.argv) > 1 else "dados")

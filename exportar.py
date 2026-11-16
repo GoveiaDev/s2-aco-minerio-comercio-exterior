@@ -4,6 +4,7 @@ Uso: python exportar.py
 Só regrava o arquivo se os dados mudaram; nesse caso registra a data da atualização.
 """
 import json, os, datetime
+from pathlib import Path
 import pandas as pd
 
 GRUPO = {'2601': 'Minério de ferro', '7201': 'Ferro-gusa', '7202': 'Ferroligas', '7207': 'Semiacabados'}
@@ -26,12 +27,12 @@ def montar(pais, uf):
     gp = gp[(gp.kg > 0) | (gp.fob_usd > 0)]
     paises = sorted(gp.pais.unique())
     m = [[FLX[x.fluxo], PRODUTOS.index(x.produto), paises.index(x.pais), (x.ano - ano0) * 12 + x.mes - 1,
-          round(x.kg / 1000), round(x.fob_usd / 1000)] for x in gp.itertuples()]
+          x.kg / 1000, x.fob_usd / 1000] for x in gp.itertuples()]
     gu = uf.groupby(['fluxo', 'produto', 'uf', 'ano', 'mes'])[['kg', 'fob_usd']].sum().reset_index()
     gu = gu[gu.kg > 0]
     ufs = sorted(gu.uf.unique())
     u = [[FLX[x.fluxo], PRODUTOS.index(x.produto), ufs.index(x.uf), (x.ano - ano0) * 12 + x.mes - 1,
-          round(x.kg / 1000), round(x.fob_usd / 1000)] for x in gu.itertuples()]
+          x.kg / 1000, x.fob_usd / 1000] for x in gu.itertuples()]
     ua = int(pais.ano.max())
     return {'fonte': 'Comex Stat (MDIC)', 'ano0': ano0, 'ultimo': {'ano': ua, 'mes': int(pais[pais.ano == ua].mes.max())},
             'produtos': PRODUTOS, 'paises': paises, 'ufs': ufs, 'campos': ['fluxo', 'produto', 'local', 'mes', 't', 'mil_usd'],
@@ -44,13 +45,13 @@ def exportar(pasta='.'):
     novo = montar(pais, uf)
     caminho = os.path.join(pasta, SAIDA)
     if os.path.exists(caminho):
-        antigo = json.loads(open(caminho, encoding='utf-8').read().removeprefix('window.DADOS = ').rstrip().rstrip(';'))
+        antigo = json.loads(Path(caminho).read_text(encoding='utf-8').removeprefix('window.DADOS = ').rstrip().rstrip(';'))
         if {k: v for k, v in antigo.items() if k != 'gerado'} == novo:
             print('dados.js sem mudança · até', f"{novo['ultimo']['mes']:02d}/{novo['ultimo']['ano']}")
             return False
     novo['gerado'] = datetime.date.today().isoformat()
     s = 'window.DADOS = ' + json.dumps(novo, ensure_ascii=False, separators=(',', ':')) + ';'
-    open(caminho, 'w', encoding='utf-8').write(s)
+    Path(caminho).write_text(s, encoding='utf-8')
     print(f"dados.js gravado · até {novo['ultimo']['mes']:02d}/{novo['ultimo']['ano']} · {len(novo['pais'])} linhas por país · "
           f"{len(novo['uf'])} por estado · {round(len(s.encode()) / 1024)} KB")
     return True
