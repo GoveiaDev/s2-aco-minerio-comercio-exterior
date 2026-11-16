@@ -27,6 +27,16 @@
   .legend{margin:0;font-size:11px;justify-content:flex-end}
   .chart{position:relative;flex:1 1 auto;min-height:220px}.chart svg{position:absolute;inset:0;width:100%;height:100%}
   .v-serie{grid-column:span 7}.v-preco{grid-column:span 5}.v-pauta{grid-column:span 4}.v-paises{grid-column:span 5}.v-ufs{grid-column:span 3}
+  .vrow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}
+  .delta{font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px;white-space:nowrap;line-height:1.5}
+  .delta.up{background:#deecf9;color:#12239e}.delta.down{background:#fde7dd;color:#a8401a}
+  .k-marinho .delta.up{background:rgba(255,255,255,.14);color:#cfe3ff}.k-marinho .delta.down{background:rgba(242,200,15,.18);color:#f2c80f}
+  .kpi svg.cols{height:24px;margin-top:auto;padding-top:3px;cursor:crosshair}
+  .anos{display:flex;justify-content:space-between;font-size:9px;color:var(--apoio);line-height:1;margin-top:1px}.k-marinho .anos{color:#8fa0c2}
+  .cab-dir{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+  .botoes.mini{height:22px;border-color:var(--borda)}.botoes.mini button{color:var(--texto-2);border-right-color:var(--borda);font-size:11px;padding:0 8px}
+  .botoes.mini button[aria-pressed="true"]{background:var(--azul);color:#fff}.botoes.mini button:hover:not([aria-pressed="true"]){background:#f3f2f1;color:var(--texto)}
+  .ann{font-size:10.5px;font-weight:600}.fim{font-size:11px;font-weight:700}
   .rodape{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--apoio)}
   @media(min-width:1100px) and (min-height:640px){
     html,body{height:100%;overflow:hidden}
@@ -77,17 +87,17 @@
 </header>
 <main class="tela">
   <section class="kpis" aria-live="polite">
-    <div class="kpi k-azul"><label id="kVolRot">Volume</label><strong id="kVol">—</strong><small id="kVolTxt">—</small><svg id="sVol" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-    <div class="kpi k-dourado"><label>Valor FOB</label><strong id="kFob">—</strong><small id="kFobTxt">—</small><svg id="sFob" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-    <div class="kpi k-roxo"><label>Preço médio FOB</label><strong id="kPre">—</strong><small id="kPreTxt">—</small><svg id="sPre" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-    <div class="kpi k-claro"><label id="kTopRot">Maior parceiro</label><strong id="kTop">—</strong><small id="kTopTxt">—</small><svg id="sTop" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-    <div class="kpi k-verde"><label>Participação da China</label><strong id="kChi">—</strong><small id="kChiTxt">—</small><svg id="sChi" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
-    <div class="kpi k-marinho"><label>Saldo: exportado − importado</label><strong id="kSal">—</strong><small id="kSalTxt">—</small><svg id="sSal" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
+    <div class="kpi k-azul"><label id="kVolRot">Volume</label><div class="vrow"><strong id="kVol">—</strong><span class="delta" id="dVol"></span></div><small id="kVolTxt">—</small><svg id="sVol" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-dourado"><label>Valor FOB</label><div class="vrow"><strong id="kFob">—</strong><span class="delta" id="dFob"></span></div><small id="kFobTxt">—</small><svg id="sFob" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-roxo"><label>Preço médio FOB</label><div class="vrow"><strong id="kPre">—</strong><span class="delta" id="dPre"></span></div><small id="kPreTxt">—</small><svg id="sPre" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-claro"><label id="kTopRot">Maior parceiro</label><div class="vrow"><strong id="kTop">—</strong><span class="delta" id="dTop"></span></div><small id="kTopTxt">—</small><svg id="sTop" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-verde"><label>Participação da China</label><div class="vrow"><strong id="kChi">—</strong><span class="delta" id="dChi"></span></div><small id="kChiTxt">—</small><svg id="sChi" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
+    <div class="kpi k-marinho"><label>Saldo: exportado − importado</label><div class="vrow"><strong id="kSal">—</strong><span class="delta" id="dSal"></span></div><small id="kSalTxt">—</small><svg id="sSal" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
   </section>
   <div class="readout" id="leitura">—</div>
   <div class="grid">
     <section class="panel v-serie"><div class="panel-head"><div><h2 id="tSerie">Exportação × importação</h2><p id="serieSub">—</p></div>
-      <div class="legend"><span><i style="background:#118dff;height:3px"></i>exportação</span><span><i style="background:#e66c37;height:3px"></i>importação</span><span><i style="background:#deecf9"></i>ano escolhido</span></div></div>
+      <div class="cab-dir"><div class="legend"><span><i style="background:#118dff;height:3px"></i>exportação</span><span><i style="background:#e66c37;height:3px"></i>importação</span><span><i style="background:rgba(230,108,55,.25)"></i>importação maior</span></div><div class="botoes mini" id="fModo"><button type="button" data-m="12" aria-pressed="true">12 meses</button><button type="button" data-m="1" aria-pressed="false">Mensal</button></div></div></div>
       <div class="chart"><svg id="svgSerie" role="img" aria-label="Volume exportado e importado, soma móvel de 12 meses"></svg></div></section>
     <section class="panel v-preco"><div class="panel-head"><div><h2>Preço médio por tonelada</h2><p id="precoSub">—</p></div>
       <div class="legend"><span><i style="background:#118dff;height:3px"></i>exportação</span><span><i style="background:#e66c37;height:3px"></i>importação</span></div></div>
