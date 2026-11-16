@@ -37,6 +37,17 @@
   .botoes.mini{height:22px;border-color:var(--borda)}.botoes.mini button{color:var(--texto-2);border-right-color:var(--borda);font-size:11px;padding:0 8px}
   .botoes.mini button[aria-pressed="true"]{background:var(--azul);color:#fff}.botoes.mini button:hover:not([aria-pressed="true"]){background:#f3f2f1;color:var(--texto)}
   .ann{font-size:10.5px;font-weight:600}.fim{font-size:11px;font-weight:700}
+  /* filtro em lista suspensa do próprio painel (estilo slicer do Power BI) */
+  .dd{position:relative}.dd select{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .dd-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;min-width:190px;height:28px;background:var(--faixa-2);border:1px solid #3a4f78;color:#fff;border-radius:4px;padding:0 8px;font-size:12.5px;text-align:left}
+  .dd-btn:hover{border-color:#5d77a8}.dd-btn svg{width:11px;height:11px;flex:none;transition:transform .15s}.dd.aberto .dd-btn svg{transform:rotate(180deg)}
+  .dd-lista{position:absolute;left:0;top:calc(100% + 3px);z-index:50;min-width:100%;background:#fff;border:1px solid var(--borda-forte);border-radius:4px;box-shadow:0 8px 24px rgba(0,0,0,.22);padding:4px 0;display:none;max-height:min(60vh,420px);overflow:auto}
+  .dd.aberto .dd-lista{display:block;animation:ddAbre .14s ease-out}@keyframes ddAbre{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .dd-op{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12.5px;color:var(--texto);white-space:nowrap;cursor:pointer}
+  .dd-op::before{content:'';width:12px;height:12px;border:1px solid var(--borda-forte);border-radius:50%;flex:none}
+  .dd-op[aria-selected="true"]{font-weight:600}.dd-op[aria-selected="true"]::before{border:4px solid var(--azul)}
+  .dd-op:hover,.dd-op.foco{background:var(--sel)}
+  @media(max-width:560px){.dd-btn{min-width:0;width:100%}}
   .rodape{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--apoio)}
   @media(min-width:1100px) and (min-height:640px){
     html,body{height:100%;overflow:hidden}
@@ -78,9 +89,9 @@
       <div class="meta" id="faixaMeta">—</div>
     </div>
     <div class="slicers" role="group" aria-label="Filtros">
-      <div class="slicer"><label for="fProd">Produto</label><select id="fProd"></select></div>
+      <div class="slicer dd" id="dd-fProd"><label for="fProd">Produto</label><select id="fProd"></select></div>
       <div class="slicer"><span class="cab">Fluxo</span><div class="botoes" id="fFlx"><button type="button" data-f="0" aria-pressed="false">Exportação</button><button type="button" data-f="1" aria-pressed="true">Importação</button></div></div>
-      <div class="slicer"><label for="fAno">Ano</label><select id="fAno" style="min-width:120px"></select></div>
+      <div class="slicer dd" id="dd-fAno"><label for="fAno">Ano</label><select id="fAno" style="min-width:120px"></select></div>
       <div class="slicer"><button type="button" class="info" id="btnSobre">ⓘ Sobre os dados</button></div>
     </div>
   </div>

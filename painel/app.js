@@ -47,6 +47,38 @@
   fA.onchange = () => { st.ano = +fA.value; render(); };
   document.querySelectorAll('#fFlx button').forEach(b => b.onclick = () => { st.flx = +b.dataset.f; st.pais = -1; render(); });
 
+  // ---------- filtros em lista suspensa (o select fica escondido e guarda o valor) ----------
+  const dds = [];
+  function listaSuspensa(sel) {
+    const caixa = sel.closest('.dd'), btn = document.createElement('button'), lista = document.createElement('div');
+    btn.type = 'button'; btn.className = 'dd-btn'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
+    btn.setAttribute('aria-label', caixa.querySelector('label').textContent);
+    lista.className = 'dd-lista'; lista.setAttribute('role', 'listbox');
+    caixa.appendChild(btn); caixa.appendChild(lista);
+    let foco = -1;
+    const ops = () => [...lista.children];
+    const fechar = () => { caixa.classList.remove('aberto'); btn.setAttribute('aria-expanded', 'false'); };
+    const escolher = v => { fechar(); if (sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event('change')); } btn.focus(); };
+    const marcar = k => { foco = k; ops().forEach((o, i) => o.classList.toggle('foco', i === k)); if (ops()[k]) ops()[k].scrollIntoView({ block: 'nearest' }); };
+    const abrir = () => {
+      dds.forEach(d => d !== api && d.fechar());
+      lista.innerHTML = [...sel.options].map(o => `<div class="dd-op" role="option" data-v="${o.value}" aria-selected="${o.value === sel.value}">${o.text}</div>`).join('');
+      ops().forEach(o => o.onclick = () => escolher(o.dataset.v));
+      caixa.classList.add('aberto'); btn.setAttribute('aria-expanded', 'true'); marcar(sel.selectedIndex);
+    };
+    btn.onclick = () => caixa.classList.contains('aberto') ? fechar() : abrir();
+    btn.onkeydown = e => {
+      const aberto = caixa.classList.contains('aberto');
+      if (['ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); if (!aberto) abrir(); else marcar(Math.max(0, Math.min(ops().length - 1, foco + (e.key === 'ArrowDown' ? 1 : -1)))); }
+      else if ((e.key === 'Enter' || e.key === ' ') && aberto) { e.preventDefault(); if (ops()[foco]) escolher(ops()[foco].dataset.v); }
+      else if (e.key === 'Escape') fechar();
+    };
+    const api = { fechar, sync: () => { btn.innerHTML = `<span>${sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : ''}</span><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`; } };
+    dds.push(api); return api;
+  }
+  listaSuspensa(fP); listaSuspensa(fA);
+  document.addEventListener('mousedown', e => { if (!e.target.closest('.dd')) dds.forEach(d => d.fechar()); });
+
   // ---------- tooltip ----------
   const dica = $('dica');
   const mostra = (e, h) => { dica.innerHTML = h; dica.style.opacity = 1; const w = dica.offsetWidth, hh = dica.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + hh > innerHeight - 8) y = e.clientY - hh - 14; dica.style.left = Math.max(8, x) + 'px'; dica.style.top = Math.max(8, y) + 'px'; };
@@ -84,7 +116,7 @@
 
   // ---------- render ----------
   function render() {
-    fP.value = st.prod; fA.value = st.ano;
+    fP.value = st.prod; fA.value = st.ano; dds.forEach(d => d.sync());
     document.querySelectorAll('#fFlx button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === st.flx));
     const { prod: p, flx: f, ano: a, pais: c } = st, prod = P[p], nm = meses(a);
     const J = janela(a), Jant = janela(a - 1, nm), temAnt = a > A0;
