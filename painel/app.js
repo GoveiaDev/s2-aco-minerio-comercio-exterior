@@ -97,7 +97,7 @@
     const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t);
     if (c >= 0) {
       const x = loc.get(c) || { t: 0 }, pos = ord.findIndex(([k]) => k === c) + 1;
-      $('kTopRot').textContent = `Participação de ${nomeC}`;
+      $('kTopRot').textContent = `Participação · ${nomeC}`;
       $('kTop').textContent = totT ? pp(x.t / totT) : '—';
       $('kTopTxt').textContent = pos ? `${pos}º ${parceiro(f)} em volume · de ${ord.length} países` : `sem ${nomeFlx(f)} no período`;
       spark('sTop', serieAno(j => { const tt = soma(IP, f, p, j).t; return tt ? soma(IP, f, p, j, c).t / tt : null; }), '#744ec2', anoIdx);
@@ -121,7 +121,7 @@
     spark('sSal', serieAno(j => soma(IP, 0, p, j, c).t - soma(IP, 1, p, j, c).t), '#f2c80f', anoIdx);
 
     // leitura
-    let txt = `Em ${rotPer(a)}, o Brasil ${f ? 'importou' : 'exportou'} <b>${ton(atual.t)}</b> de ${prod.toLowerCase()}${nomeC ? (f ? ' de ' : ' para ') + nomeC : ''}`;
+    let txt = `Em ${rotPer(a)}, o Brasil ${f ? 'importou' : 'exportou'} <b>${ton(atual.t)}</b> de ${prod.toLowerCase()}${nomeC ? (f ? ' (origem: ' : ' (destino: ') + nomeC + ')' : ''}`;
     if (ant && ant.t > 0) txt += `, <b>${pct(atual.t / ant.t - 1)}</b> contra ${a === UA ? 'o mesmo período de ' : ''}${a - 1}`;
     if (pr) txt += `, a <b>US$ ${nf(pr)} por tonelada</b> FOB`;
     txt += '.';
@@ -135,7 +135,8 @@
   // ---------- séries ----------
   function rolar(arr, k = 12) { const o = new Array(arr.length).fill(null); let s = 0; for (let i = 0; i < arr.length; i++) { s += arr[i]; if (i >= k) s -= arr[i - k]; if (i >= k - 1) o[i] = s; } return o; }
   function grafico(id, series, { fmt, titulo }) {
-    const W = 640, H = 250, m = { l: 54, r: 14, t: 12, b: 24 };
+    const el = $(id), box = el.parentNode.getBoundingClientRect();
+    const W = Math.max(280, Math.round(box.width)), H = Math.max(150, Math.round(box.height)), m = { l: 54, r: 10, t: 8, b: 20 };
     const vals = series.flatMap(s => s.v).filter(v => v != null && isFinite(v));
     let mx = Math.max(...vals, 0), mn = Math.min(...vals, 0);
     const passo = (() => { const r = (mx - mn) / 4, e = Math.pow(10, Math.floor(Math.log10(r || 1))), n = r / e; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * e; })();
@@ -145,14 +146,14 @@
     const a0 = (st.ano - A0) * 12, a1 = a0 + meses(st.ano) - 1;
     g += `<rect x="${X(a0)}" y="${m.t}" width="${Math.max(2, X(a1) - X(a0))}" height="${H - m.t - m.b}" fill="#deecf9"/>`;
     for (let v = mn; v <= mx + passo / 2; v += passo) g += `<line class="rule" x1="${m.l}" x2="${W - m.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="axis" x="${m.l - 6}" y="${Y(v) + 3}" text-anchor="end">${fmt(v)}</text>`;
-    for (let y = A0; y <= UA; y++) if ((y - A0) % 2 === 1) g += `<text class="axis" x="${X((y - A0) * 12 + 6)}" y="${H - 6}" text-anchor="middle">${y}</text>`;
+    const pulo = W > 560 ? 1 : 2; for (let y = A0; y <= UA; y++) if ((y - A0) % pulo === (pulo - 1)) g += `<text class="axis" x="${X((y - A0) * 12 + 6)}" y="${H - 6}" text-anchor="middle">${y}</text>`;
     for (const s of series) {
       let d = '', pen = false;
       s.v.forEach((v, i) => { if (v == null || !isFinite(v)) { pen = false; return; } d += (pen ? 'L' : 'M') + X(i).toFixed(1) + ',' + Y(v).toFixed(1); pen = true; });
       g += `<path d="${d}" fill="none" stroke="${s.cor}" stroke-width="2.2"/>`;
     }
     g += `<rect id="${id}Hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/><line id="${id}Cur" y1="${m.t}" y2="${H - m.b}" stroke="#605e5c" stroke-dasharray="2 3" opacity="0"/>`;
-    const el = $(id); el.setAttribute('viewBox', `0 0 ${W} ${H}`); el.innerHTML = g;
+    el.setAttribute('viewBox', `0 0 ${W} ${H}`); el.innerHTML = g;
     const hit = $(id + 'Hit'), cur = $(id + 'Cur');
     hit.onmousemove = e => {
       const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W, i = Math.max(0, Math.min(NM - 1, Math.round((x - m.l) / (W - m.l - m.r) * (NM - 1))));
@@ -188,7 +189,7 @@
   function renderPaises(loc, totT, Jant, temAnt) {
     const f = st.flx, p = st.prod;
     $('tPaises').textContent = f ? 'De onde vem' : 'Para onde vai';
-    $('paisesSub').textContent = `${P[p]} · ${rotPer(st.ano)} · ${loc.size} países`;
+    $('paisesSub').textContent = `${P[p]} · ${rotPer(st.ano)} · ${[...loc.values()].filter(x => x.t > 0).length} países`;
     $('chipPais').innerHTML = st.pais >= 0 ? `<span class="chip">${D.paises[st.pais]}<button type="button" aria-label="Limpar país" id="limpaPais">×</button></span>` : '';
     if (st.pais >= 0) $('limpaPais').onclick = () => { st.pais = -1; render(); };
     const antL = temAnt ? porLocal(IP, f, p, Jant) : new Map();
@@ -201,14 +202,21 @@
     $('tPaisTotal').innerHTML = totT ? `<tr><td>Total · ${ord.length} países</td><td>${ton(totT)}</td><td></td><td>100%</td><td>${nf(preco(totV, totT))}</td></tr>` : '';
     $('tPaisCorpo').querySelectorAll('tr[data-k]').forEach(tr => tr.onclick = () => { const k = +tr.dataset.k; st.pais = st.pais === k ? -1 : k; render(); });
   }
+  function aparar(el) { // tela única: mostra só as linhas que cabem
+    while (el.children.length > 3 && el.scrollHeight > el.clientHeight + 1) el.lastElementChild.remove();
+  }
   function renderUfs(J) {
     const f = st.flx, loc = porLocal(IU, f, st.prod, J);
-    $('ufSub').textContent = `${f ? 'UF do importador' : 'UF produtora'} · volume em ${rotPer(st.ano)} · 10 maiores`;
+    $('ufSub').textContent = `${f ? 'UF do importador' : 'UF produtora'} · maiores em volume, ${rotPer(st.ano)}`;
     const tot = [...loc.values()].reduce((s, x) => s + x.t, 0);
     const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t).slice(0, 10), mx = ord.length ? ord[0][1].t : 1;
     const sig = n => ({ 'Minas Gerais': 'MG', 'São Paulo': 'SP', 'Rio de Janeiro': 'RJ', 'Espírito Santo': 'ES', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS', 'Bahia': 'BA', 'Pará': 'PA', 'Maranhão': 'MA', 'Ceará': 'CE', 'Pernambuco': 'PE', 'Goiás': 'GO', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Amazonas': 'AM', 'Distrito Federal': 'DF', 'Paraíba': 'PB', 'Rio Grande do Norte': 'RN', 'Alagoas': 'AL', 'Sergipe': 'SE', 'Piauí': 'PI', 'Tocantins': 'TO', 'Rondônia': 'RO', 'Acre': 'AC', 'Amapá': 'AP', 'Roraima': 'RR' }[n] || n.slice(0, 6));
     $('ufs').innerHTML = ord.length ? ord.map(([k, x]) => `<div class="linha" title="${D.ufs[k]}"><span class="n">${sig(D.ufs[k])}</span><span class="trilho"><i style="width:${(x.t / mx * 55).toFixed(1)}%;background:#744ec2"></i><b>${pp(x.t / tot)}</b><em>${ton(x.t)}</em></span></div>`).join('') : '<div class="panel-foot">Sem dado no período.</div>';
+    aparar($('ufs'));
   }
 
+  $('btnSobre').onclick = () => $('sobre').showModal();
+  let tRes; addEventListener('resize', () => { clearTimeout(tRes); tRes = setTimeout(render, 120); });
   render();
+  window.PAINEL = { st, render };
 })();

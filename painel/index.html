@@ -11,24 +11,53 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="tema.css">
 <style>
-  .v-serie{grid-column:span 7}.v-preco{grid-column:span 5}.v-pauta{grid-column:span 4}.v-paises{grid-column:span 5;display:flex;flex-direction:column}.v-ufs{grid-column:span 3}
-  @media(max-width:1180px){.v-serie,.v-preco{grid-column:1/-1}.v-pauta,.v-ufs{grid-column:span 6}.v-paises{grid-column:1/-1}}
+  /* ── Tela única, estilo Power BI: tudo cabe na janela no computador ── */
+  .faixa-in{max-width:none;padding:9px 16px;gap:8px 20px}.faixa h1{font-size:18px}
+  .slicer select{height:28px}.botoes{height:28px}
+  .info{background:transparent;border:1px solid #3a4f78;color:var(--faixa-texto);border-radius:4px;height:28px;padding:0 10px;font-size:12px}
+  .info:hover{background:var(--faixa-2);color:#fff}
+  main.tela{max-width:none;width:100%;margin:0;padding:8px 12px 6px;display:flex;flex-direction:column;gap:8px}
+  .kpis,.readout,.rodape,.faixa{flex:none}
+  .kpis{margin:0;gap:8px}.kpi{padding:8px 12px 6px}.kpi label{font-size:11.5px}.kpi strong{font-size:clamp(20px,1.7vw,27px)}
+  .kpi small{font-size:11px;line-height:1.3}.kpi svg{height:18px;padding-top:2px}
+  .readout{margin:0;padding:6px 12px;font-size:12px}
+  .grid{gap:8px}
+  .panel{padding:9px 12px;display:flex;flex-direction:column;min-height:0}
+  .panel-head{margin-bottom:4px;align-items:center}.panel-head p{font-size:11px}
+  .legend{margin:0;font-size:11px;justify-content:flex-end}
+  .chart{position:relative;flex:1 1 auto;min-height:220px}.chart svg{position:absolute;inset:0;width:100%;height:100%}
+  .v-serie{grid-column:span 7}.v-preco{grid-column:span 5}.v-pauta{grid-column:span 4}.v-paises{grid-column:span 5}.v-ufs{grid-column:span 3}
+  .rodape{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--apoio)}
+  @media(min-width:1100px) and (min-height:640px){
+    html,body{height:100%;overflow:hidden}
+    body{display:flex;flex-direction:column}
+    main.tela{flex:1 1 auto;min-height:0}
+    .grid{flex:1 1 auto;min-height:0;grid-template-rows:minmax(0,1.1fr) minmax(0,1fr)}
+    .chart{min-height:0}
+    .readout{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  }
+  @media(max-width:1099px){.v-serie,.v-preco,.v-paises{grid-column:1/-1}.v-pauta,.v-ufs{grid-column:span 6}.tabela-box{max-height:360px}}
   @media(max-width:760px){.v-pauta,.v-ufs{grid-column:1/-1}}
-  .barras .linha{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:3px 2px;border:0;background:transparent;text-align:left;border-radius:3px}
+  .lista{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:space-around}
+  .barras .linha{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:1px 2px;border:0;background:transparent;text-align:left;border-radius:3px}
   @media(max-width:560px){.barras .linha{grid-template-columns:104px minmax(0,1fr)}}
-  .barras.estreito .linha{grid-template-columns:44px minmax(0,1fr)}
+  .barras.estreito .linha{grid-template-columns:30px minmax(0,1fr)}
   .barras .linha:hover{background:#f3f2f1}.barras .linha.sel{background:var(--sel)}
   .barras .n{font-size:12px;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}.barras .linha.sel .n{font-weight:700}
-  .barras .trilho{display:flex;align-items:center;gap:6px;height:20px;min-width:0}.barras .trilho i{display:block;height:17px;border-radius:0 2px 2px 0;min-width:2px;flex:none}
+  .barras .trilho{display:flex;align-items:center;gap:6px;height:18px;min-width:0}.barras .trilho i{display:block;height:15px;border-radius:0 2px 2px 0;min-width:2px;flex:none}
   .barras .trilho b{font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--texto)}.barras .trilho em{font-style:normal;font-size:10.5px;color:var(--texto-2);white-space:nowrap}
-  .tabela-box{overflow:auto;max-height:380px;flex:1 1 auto;border-top:1px solid var(--borda)}
+  .tabela-box{overflow:auto;flex:1 1 auto;min-height:0;border-top:1px solid var(--borda)}
+  table{font-size:11.5px}th{padding:5px 6px}td{padding:4px 6px}
   tbody tr{cursor:pointer}tbody tr:hover{background:#f3f2f1}tbody tr.sel{background:var(--sel)}
-  td.barra-cel{position:relative;min-width:92px}td.barra-cel i{position:absolute;right:6px;top:5px;bottom:5px;background:rgba(17,141,255,.22);border-radius:2px}td.barra-cel span{position:relative}
+  td.barra-cel{position:relative;min-width:92px}td.barra-cel i{position:absolute;right:6px;top:4px;bottom:4px;background:rgba(17,141,255,.22);border-radius:2px}td.barra-cel span{position:relative}
   td:first-child{max-width:170px;overflow:hidden;text-overflow:ellipsis}
+  tfoot td{position:sticky;bottom:0;font-weight:700;border-top:1px solid var(--borda-forte);background:#faf9f8}
   .sobe{color:#107c10}.desce{color:var(--ruim)}
-  tfoot td{font-weight:700;border-top:1px solid var(--borda-forte);background:#faf9f8}
-  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--sel);color:var(--azul-esc);border-radius:12px;padding:2px 4px 2px 10px;font-size:11.5px;font-weight:600}
+  .chip{display:inline-flex;align-items:center;gap:6px;background:var(--sel);color:var(--azul-esc);border-radius:12px;padding:2px 4px 2px 10px;font-size:11.5px;font-weight:600;white-space:nowrap}
   .chip button{border:0;background:#fff;border-radius:50%;width:18px;height:18px;line-height:16px;color:var(--azul-esc);font-weight:700}
+  dialog{border:0;border-radius:8px;max-width:760px;width:calc(100% - 32px);padding:18px 22px;box-shadow:0 10px 40px rgba(0,0,0,.25);color:var(--texto)}
+  dialog::backdrop{background:rgba(27,42,71,.45)}dialog h2{font-size:16px;margin-bottom:6px}dialog .method{padding-left:18px}
+  dialog form{text-align:right;margin-top:10px}dialog form button{background:var(--azul);color:#fff;border:0;border-radius:4px;padding:6px 14px;font-weight:600}
 </style>
 </head>
 <body>
@@ -42,11 +71,11 @@
       <div class="slicer"><label for="fProd">Produto</label><select id="fProd"></select></div>
       <div class="slicer"><span class="cab">Fluxo</span><div class="botoes" id="fFlx"><button type="button" data-f="0" aria-pressed="false">Exportação</button><button type="button" data-f="1" aria-pressed="true">Importação</button></div></div>
       <div class="slicer"><label for="fAno">Ano</label><select id="fAno" style="min-width:120px"></select></div>
+      <div class="slicer"><button type="button" class="info" id="btnSobre">ⓘ Sobre os dados</button></div>
     </div>
   </div>
 </header>
 <main class="tela">
-  <div class="scope" id="escopo">—</div>
   <section class="kpis" aria-live="polite">
     <div class="kpi k-azul"><label id="kVolRot">Volume</label><strong id="kVol">—</strong><small id="kVolTxt">—</small><svg id="sVol" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
     <div class="kpi k-dourado"><label>Valor FOB</label><strong id="kFob">—</strong><small id="kFobTxt">—</small><svg id="sFob" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
@@ -55,32 +84,35 @@
     <div class="kpi k-verde"><label>Participação da China</label><strong id="kChi">—</strong><small id="kChiTxt">—</small><svg id="sChi" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
     <div class="kpi k-marinho"><label>Saldo: exportado − importado</label><strong id="kSal">—</strong><small id="kSalTxt">—</small><svg id="sSal" viewBox="0 0 120 26" preserveAspectRatio="none" aria-hidden="true"></svg></div>
   </section>
-  <div class="readout"><span>LEITURA</span><div id="leitura">—</div></div>
+  <div class="readout" id="leitura">—</div>
   <div class="grid">
-    <section class="panel v-serie"><div class="panel-head"><div><h2 id="tSerie">Exportação × importação</h2><p id="serieSub">—</p></div></div>
-      <div class="legend"><span><i style="background:#118dff;height:3px"></i>exportação</span><span><i style="background:#e66c37;height:3px"></i>importação</span><span><i style="background:#deecf9"></i>ano escolhido</span></div>
-      <svg id="svgSerie" role="img" aria-label="Volume exportado e importado, soma móvel de 12 meses"></svg></section>
-    <section class="panel v-preco"><div class="panel-head"><div><h2>Preço médio por tonelada</h2><p id="precoSub">—</p></div></div>
-      <div class="legend"><span><i style="background:#118dff;height:3px"></i>exportação</span><span><i style="background:#e66c37;height:3px"></i>importação</span></div>
-      <svg id="svgPreco" role="img" aria-label="Preço médio FOB por tonelada, média móvel de 12 meses"></svg></section>
+    <section class="panel v-serie"><div class="panel-head"><div><h2 id="tSerie">Exportação × importação</h2><p id="serieSub">—</p></div>
+      <div class="legend"><span><i style="background:#118dff;height:3px"></i>exportação</span><span><i style="background:#e66c37;height:3px"></i>importação</span><span><i style="background:#deecf9"></i>ano escolhido</span></div></div>
+      <div class="chart"><svg id="svgSerie" role="img" aria-label="Volume exportado e importado, soma móvel de 12 meses"></svg></div></section>
+    <section class="panel v-preco"><div class="panel-head"><div><h2>Preço médio por tonelada</h2><p id="precoSub">—</p></div>
+      <div class="legend"><span><i style="background:#118dff;height:3px"></i>exportação</span><span><i style="background:#e66c37;height:3px"></i>importação</span></div></div>
+      <div class="chart"><svg id="svgPreco" role="img" aria-label="Preço médio FOB por tonelada, média móvel de 12 meses"></svg></div></section>
     <section class="panel v-pauta"><div class="panel-head"><div><h2 id="tPauta">A pauta em US$</h2><p id="pautaSub">—</p></div></div>
-      <div class="barras" id="pauta"></div>
-      <div class="panel-foot">Clique num produto para escolher. Toneladas de produtos diferentes não se somam; o valor sim.</div></section>
+      <div class="barras lista" id="pauta"></div></section>
     <section class="panel v-paises"><div class="panel-head"><div><h2 id="tPaises">Países</h2><p id="paisesSub">—</p></div><div id="chipPais"></div></div>
-      <div class="tabela-box"><table><thead><tr><th>País</th><th>Volume</th><th>vs ano ant.</th><th>Participação</th><th>US$/t</th></tr></thead><tbody id="tPaisCorpo"></tbody><tfoot id="tPaisTotal"></tfoot></table></div>
-      <div class="panel-foot">Clique num país para filtrar os indicadores e os gráficos. Clique de novo para voltar ao total.</div></section>
+      <div class="tabela-box"><table><thead><tr><th>País</th><th>Volume</th><th>vs ano ant.</th><th>Participação</th><th>US$/t</th></tr></thead><tbody id="tPaisCorpo"></tbody><tfoot id="tPaisTotal"></tfoot></table></div></section>
     <section class="panel v-ufs"><div class="panel-head"><div><h2>Estados</h2><p id="ufSub">—</p></div></div>
-      <div class="barras estreito" id="ufs"></div></section>
+      <div class="barras estreito lista" id="ufs"></div></section>
   </div>
-  <details><summary>Como funciona — e o que este painel não permite afirmar</summary><ul class="method">
-    <li><b>Fonte:</b> Comex Stat, do Ministério do Desenvolvimento, Indústria, Comércio e Serviços (MDIC), pela API oficial. Exportação e importação mensal de janeiro de 2015 a outubro de 2026, por posição SH4, país e estado. Volume em toneladas líquidas, valor em US$ FOB.</li>
-    <li><b>Produtos:</b> 30 posições SH4 agrupadas em 9 produtos. Aço plano = 7208 a 7212, 7219, 7220, 7225 e 7226 (laminados planos, inclusive inox e ligados). Aço longo = 7213 a 7217, 7221, 7222, 7227 e 7228. Tubos = 7304 a 7306. Alumínio laminado e extrudado = 7604 a 7607.</li>
-    <li><b>2026 vai até outubro.</b> Com 2026 escolhido, todas as comparações usam janeiro a outubro dos dois anos.</li>
-    <li><b>FOB não é o preço posto na fábrica.</b> No importado faltam frete, seguro, imposto de importação e internação. O preço médio do grupo também muda com a mistura de produtos.</li>
-    <li><b>O dado mostra o quê, não o porquê.</b> Mudanças de volume e de origem coincidem com defesa comercial, câmbio e preço internacional, mas este dado não separa as causas. País é a origem declarada; aço revestido num terceiro país aparece com a origem desse país.</li>
-    <li><b>Comércio exterior não é consumo.</b> Para a fatia do importado no mercado brasileiro faltam a produção e as vendas internas, que não estão nesta base. Estado é a UF do produto (produtor na exportação, importador na importação).</li></ul></details>
-  <footer><span><b>Ramon Goveia</b> · Dados aplicados ao mercado da indústria pesada</span><span>S2 · <a href="https://github.com/GoveiaDev/s2-aco-minerio-comercio-exterior">Código, notebook e limitações</a> · <a href="https://www.linkedin.com/in/ramon-goveia-92266443">LinkedIn</a></span></footer>
+  <div class="rodape"><span id="escopo">—</span><span><b>Ramon Goveia</b> · S2 · <a href="https://github.com/GoveiaDev/s2-aco-minerio-comercio-exterior">código e notebook</a> · <a href="https://www.linkedin.com/in/ramon-goveia-92266443">LinkedIn</a></span></div>
 </main>
+<dialog id="sobre" aria-labelledby="sobreTit">
+  <h2 id="sobreTit">Como funciona — e o que este painel não permite afirmar</h2>
+  <ul class="method">
+    <li><b>Fonte:</b> Comex Stat, do Ministério do Desenvolvimento, Indústria, Comércio e Serviços (MDIC), pela API oficial. Exportação e importação mensal de janeiro de 2015 a outubro de 2026, por posição SH4, país e estado. Volume em toneladas líquidas, valor em US$ FOB.</li>
+    <li><b>Produtos:</b> 30 posições SH4 em 9 produtos. Aço plano = 7208 a 7212, 7219, 7220, 7225 e 7226. Aço longo = 7213 a 7217, 7221, 7222, 7227 e 7228. Tubos = 7304 a 7306. Alumínio laminado e extrudado = 7604 a 7607.</li>
+    <li><b>2026 vai até outubro.</b> Com 2026 escolhido, as comparações usam janeiro a outubro dos dois anos.</li>
+    <li><b>FOB não é o preço posto na fábrica.</b> No importado faltam frete, seguro, imposto de importação e internação. O preço médio do grupo também muda com a mistura de produtos.</li>
+    <li><b>O dado mostra o quê, não o porquê.</b> Volume e origem mudam com defesa comercial, câmbio e preço internacional ao mesmo tempo. País é a origem declarada; aço revestido num terceiro país aparece com a origem desse país.</li>
+    <li><b>Comércio exterior não é consumo.</b> Para a fatia do importado no mercado brasileiro faltam produção e vendas internas. Estado é a UF do produto: produtor na exportação, importador na importação.</li>
+    <li><b>Autor:</b> Ramon Goveia · dados aplicados ao mercado da indústria pesada · <a href="https://github.com/GoveiaDev/s2-aco-minerio-comercio-exterior">código, notebook e limitações</a>.</li></ul>
+  <form method="dialog"><button>Fechar</button></form>
+</dialog>
 <div class="tooltip" id="dica" role="tooltip"></div>
 <script src="dados.js"></script>
 <script src="app.js"></script>
