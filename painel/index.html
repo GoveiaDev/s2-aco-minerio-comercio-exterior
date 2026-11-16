@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="tema.css">
 <style>
-  /* ── Tela única, estilo Power BI: tudo cabe na janela no computador ── */
+  /* Relatório responsivo: preservar espaço de leitura mesmo com zoom. */
   .faixa-in{max-width:none;padding:9px 16px;gap:8px 20px}.faixa h1{font-size:18px}
   .slicer select{height:28px}.botoes{height:28px}
   .info{background:transparent;border:1px solid #3a4f78;color:var(--faixa-texto);border-radius:4px;height:28px;padding:0 10px;font-size:12px}
@@ -23,15 +23,19 @@
   .readout{margin:0;padding:6px 12px;font-size:12px}
   .grid{gap:8px}
   .panel{padding:9px 12px;display:flex;flex-direction:column;min-height:0}
-  .panel-head{margin-bottom:4px;align-items:center}.panel-head p{font-size:11px}
+  .panel-head{margin-bottom:8px;align-items:center;flex:none}.panel-head p{font-size:11px}
   .legend{margin:0;font-size:11px;justify-content:flex-end}
-  .chart{position:relative;flex:1 1 auto;min-height:220px}.chart svg{position:absolute;inset:0;width:100%;height:100%}
+  .chart{position:relative;flex:1 1 auto;min-height:220px}.chart svg{position:absolute;inset:0;width:100%;height:100%;touch-action:pan-y}
+  .chart svg:focus-visible{outline:2px solid var(--azul);outline-offset:2px;border-radius:3px}
+  .chart svg:focus:not(:focus-visible){outline:none}
+  .chart rect[id$="Hit"]{cursor:crosshair}.spark-ativo{stroke:var(--texto);stroke-width:1}
+  .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
   .v-serie{grid-column:span 7}.v-preco{grid-column:span 5}.v-pauta{grid-column:span 4}.v-paises{grid-column:span 5}.v-ufs{grid-column:span 3}
   .vrow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}
   .delta{font-size:11px;font-weight:700;border-radius:10px;padding:1px 7px;white-space:nowrap;line-height:1.5}
   .delta.up{background:#deecf9;color:#12239e}.delta.zero{background:#edebe9;color:#605e5c}.k-marinho .delta.zero{background:rgba(255,255,255,.12);color:#c9d3e6}.delta.down{background:#fde7dd;color:#a8401a}
   .k-marinho .delta.up{background:rgba(255,255,255,.14);color:#cfe3ff}.k-marinho .delta.down{background:rgba(242,200,15,.18);color:#f2c80f}
-  .kpi svg.cols{height:24px;margin-top:auto;padding-top:3px}
+  .kpi small{margin-bottom:8px}.kpi svg.cols{height:24px;min-height:24px;flex:none;margin-top:auto;padding:0}
   .anos{display:flex;justify-content:space-between;font-size:9px;color:var(--apoio);line-height:1;margin-top:1px}.k-marinho .anos{color:#8fa0c2}
   .cab-dir{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
   .botoes.mini{height:22px;border-color:var(--borda)}.botoes.mini button{color:var(--texto-2);border-right-color:var(--borda);font-size:11px;padding:0 8px}
@@ -49,17 +53,10 @@
   .dd-op:hover,.dd-op.foco{background:var(--sel)}
   @media(max-width:560px){.dd-btn{min-width:0;width:100%}}
   .rodape{display:flex;justify-content:space-between;gap:10px;font-size:10.5px;color:var(--apoio)}
-  @media(min-width:1100px) and (min-height:640px){
-    html,body{height:100%;overflow:hidden}
-    body{display:flex;flex-direction:column}
-    main.tela{flex:1 1 auto;min-height:0}
-    .grid{flex:1 1 auto;min-height:0;grid-template-rows:minmax(0,1.1fr) minmax(0,1fr)}
-    .chart{min-height:0}
-    .readout{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  }
-  @media(max-width:1099px){.v-serie,.v-preco,.v-paises{grid-column:1/-1}.v-pauta,.v-ufs{grid-column:span 6}.tabela-box{max-height:360px}}
+  @media(min-width:1100px){.grid{grid-template-rows:minmax(300px,auto) 360px}}
+  @media(max-width:1099px){.v-serie,.v-preco,.v-paises{grid-column:1/-1}.v-pauta,.v-ufs{grid-column:span 6}.v-paises{height:400px}.v-pauta,.v-ufs{min-height:300px}}
   @media(max-width:760px){.v-pauta,.v-ufs{grid-column:1/-1}}
-  .lista{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:space-around;overflow-y:auto;overflow-x:hidden}
+  .lista{flex:1 1 auto;min-height:0;display:flex;flex-direction:column;justify-content:flex-start;gap:7px;overflow-y:auto;overflow-x:hidden}
   .barras .linha{display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:0 2px;flex:none;border:0;background:transparent;text-align:left;border-radius:3px}
   @media(max-width:560px){.barras .linha{grid-template-columns:104px minmax(0,1fr)}}
   .barras.estreito .linha{grid-template-columns:38px minmax(0,1fr)}
@@ -67,12 +64,12 @@
   .barras .n{font-size:12px;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}.barras .linha.sel .n{font-weight:700}
   .barras .trilho{display:flex;align-items:center;gap:6px;height:17px;min-width:0}.barras .trilho i{display:block;height:13px;border-radius:0 2px 2px 0;min-width:2px;flex:none}
   .barras .trilho b{font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--texto)}.barras .trilho em{font-style:normal;font-size:10.5px;color:var(--texto-2);white-space:nowrap}
-  .tabela-box{overflow:auto;flex:1 1 auto;min-height:0;border-top:1px solid var(--borda)}
-  table{font-size:11.5px}th{padding:5px 6px}td{padding:4px 6px}
+  .tabela-box{overflow:auto;flex:1 1 auto;min-height:180px;border-top:1px solid var(--borda);isolation:isolate;scrollbar-gutter:stable}
+  table{font-size:11.5px;border-collapse:separate;border-spacing:0}th{padding:7px 6px;z-index:3}td{padding:6px}
   tbody tr{cursor:pointer}tbody tr:hover{background:#f3f2f1}tbody tr.sel{background:var(--sel)}
   td.barra-cel{position:relative;min-width:92px}td.barra-cel i{position:absolute;right:6px;top:4px;bottom:4px;background:rgba(17,141,255,.22);border-radius:2px}td.barra-cel span{position:relative}
   td:first-child{max-width:170px;overflow:hidden;text-overflow:ellipsis}
-  tfoot td{position:sticky;bottom:0;font-weight:700;border-top:1px solid var(--borda-forte);background:#faf9f8}
+  tfoot td{position:sticky;bottom:0;z-index:2;font-weight:700;border-top:1px solid var(--borda-forte);background:#faf9f8}
   .sobe{color:#107c10}.desce{color:var(--ruim)}
   .chip{display:inline-flex;align-items:center;gap:6px;background:var(--sel);color:var(--azul-esc);border-radius:12px;padding:2px 4px 2px 10px;font-size:11.5px;font-weight:600;white-space:nowrap}
   .chip button{border:0;background:#fff;border-radius:50%;width:18px;height:18px;line-height:16px;color:var(--azul-esc);font-weight:700}
@@ -82,7 +79,7 @@
   [hidden]{display:none!important}
   .filtro-pais{padding:0 16px 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;color:var(--faixa-texto)}
   .filtro-pais button{background:var(--faixa-2);border:1px solid #5d77a8;border-radius:4px;color:#fff;padding:4px 8px}
-  .pais-ferramentas{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px;font-size:11px}
+  .pais-ferramentas{display:flex;flex:none;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 8px;font-size:11px}
   .pais-ferramentas input{flex:1 1 130px;min-width:0;width:100%;padding:5px 8px;border:1px solid var(--borda-forte);border-radius:4px}
   .pais-ferramentas button{padding:4px 8px;border:1px solid var(--borda-forte);border-radius:4px;background:#fff;color:var(--azul-esc)}
   .pais-btn{border:0;background:transparent;color:var(--azul-esc);text-align:left;padding:2px 0;font:inherit}
@@ -129,6 +126,7 @@
   <div class="filtro-pais"><span id="paisAtivo" aria-live="polite">Brasil · todos os países</span><button type="button" id="limpaPais" hidden>Limpar país</button></div>
 </header>
 <main class="tela">
+  <p class="sr-only" id="ajudaGrafico">Use as setas para percorrer os meses do gráfico, Home e End para ir ao início e ao fim, e Escape para ocultar os detalhes.</p>
   <section class="kpis" id="indicadores" aria-label="Indicadores do período" aria-live="polite">
     <div class="kpi k-azul"><label id="kVolRot">Volume</label><div class="vrow"><strong id="kVol">—</strong><span class="delta" id="dVol"></span></div><small id="kVolTxt">—</small><svg id="sVol" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
     <div class="kpi k-dourado secundario"><label>Valor FOB</label><div class="vrow"><strong id="kFob">—</strong><span class="delta" id="dFob"></span></div><small id="kFobTxt">—</small><svg id="sFob" class="cols" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true"></svg><div class="anos"><span>2015</span><span>2026</span></div></div>
@@ -168,8 +166,9 @@
     <li><b>Autor:</b> Ramon Goveia · dados aplicados ao mercado da indústria pesada · <a href="https://github.com/GoveiaDev/s2-aco-minerio-comercio-exterior">código, notebook e limitações</a>.</li></ul>
   <form method="dialog"><button>Fechar</button></form>
 </dialog>
-<div class="tooltip" id="dica" role="tooltip"></div>
+<div class="tooltip" id="dica" role="tooltip" hidden></div>
 <script src="dados.js"></script>
+<script src="interacao.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

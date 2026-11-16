@@ -1,5 +1,5 @@
 (() => {
-  const D = window.DADOS, $ = id => document.getElementById(id);
+  const D = window.DADOS, G = window.GraficoInteracao, $ = id => document.getElementById(id);
   const A0 = D.ano0, UA = D.ultimo.ano, UM = D.ultimo.mes, NM = (UA - A0) * 12 + UM; // meses com dado
   const P = D.produtos, nP = P.length, CHINA = D.paises.indexOf('China');
   const st = { prod: P.indexOf('Aço plano'), flx: 1, ano: UA, pais: -1 }; // abre no período corrente
@@ -65,28 +65,33 @@
   const dds = [];
   function listaSuspensa(sel) {
     const caixa = sel.closest('.dd'), btn = document.createElement('button'), lista = document.createElement('div');
+    sel.tabIndex = -1; sel.setAttribute('aria-hidden', 'true');
     btn.type = 'button'; btn.className = 'dd-btn'; btn.setAttribute('aria-haspopup', 'listbox'); btn.setAttribute('aria-expanded', 'false');
     btn.setAttribute('aria-label', caixa.querySelector('label').textContent);
-    lista.className = 'dd-lista'; lista.setAttribute('role', 'listbox');
+    lista.className = 'dd-lista'; lista.id = sel.id + '-opcoes'; lista.setAttribute('role', 'listbox'); lista.tabIndex = -1;
+    lista.setAttribute('aria-label', caixa.querySelector('label').textContent); btn.setAttribute('aria-controls', lista.id);
     caixa.appendChild(btn); caixa.appendChild(lista);
     let foco = -1;
     const ops = () => [...lista.children];
     const fechar = () => { caixa.classList.remove('aberto'); btn.setAttribute('aria-expanded', 'false'); };
     const escolher = v => { fechar(); if (sel.value !== v) { sel.value = v; sel.dispatchEvent(new Event('change')); } btn.focus(); };
-    const marcar = k => { foco = k; ops().forEach((o, i) => o.classList.toggle('foco', i === k)); if (ops()[k]) ops()[k].scrollIntoView({ block: 'nearest' }); };
+    const marcar = k => { foco = k; ops().forEach((o, i) => o.classList.toggle('foco', i === k)); if (ops()[k]) { lista.setAttribute('aria-activedescendant', ops()[k].id); ops()[k].scrollIntoView({ block: 'nearest' }); } };
     const abrir = () => {
       dds.forEach(d => d !== api && d.fechar());
-      lista.innerHTML = [...sel.options].map(o => `<div class="dd-op" role="option" data-v="${o.value}" aria-selected="${o.value === sel.value}">${o.text}</div>`).join('');
+      lista.innerHTML = [...sel.options].map((o, i) => `<div class="dd-op" id="${sel.id}-op-${i}" role="option" data-v="${o.value}" aria-selected="${o.value === sel.value}">${o.text}</div>`).join('');
       ops().forEach(o => o.onclick = () => escolher(o.dataset.v));
-      caixa.classList.add('aberto'); btn.setAttribute('aria-expanded', 'true'); marcar(sel.selectedIndex);
+      caixa.classList.add('aberto'); btn.setAttribute('aria-expanded', 'true'); marcar(sel.selectedIndex); lista.focus({ preventScroll: true });
     };
     btn.onclick = () => caixa.classList.contains('aberto') ? fechar() : abrir();
-    btn.onkeydown = e => {
+    btn.onkeydown = lista.onkeydown = e => {
       const aberto = caixa.classList.contains('aberto');
       if (['ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); if (!aberto) abrir(); else marcar(Math.max(0, Math.min(ops().length - 1, foco + (e.key === 'ArrowDown' ? 1 : -1)))); }
       else if ((e.key === 'Enter' || e.key === ' ') && aberto) { e.preventDefault(); if (ops()[foco]) escolher(ops()[foco].dataset.v); }
-      else if (e.key === 'Escape') fechar();
+      else if (aberto && (e.key === 'Home' || e.key === 'End')) { e.preventDefault(); marcar(e.key === 'Home' ? 0 : ops().length - 1); }
+      else if (e.key === 'Escape') { fechar(); btn.focus(); }
+      else if (e.key === 'Tab') { fechar(); btn.focus(); }
     };
+    caixa.addEventListener('focusout', e => { if (!caixa.contains(e.relatedTarget)) fechar(); });
     const api = { fechar, sync: () => { btn.innerHTML = `<span>${sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : ''}</span><svg viewBox="0 0 12 12"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>`; } };
     dds.push(api); return api;
   }
@@ -95,13 +100,24 @@
 
   // ---------- tooltip ----------
   const dica = $('dica');
-  const mostra = (e, h) => { dica.innerHTML = h; dica.style.opacity = 1; const w = dica.offsetWidth, hh = dica.offsetHeight; let x = e.clientX + 14, y = e.clientY + 14; if (x + w > innerWidth - 8) x = e.clientX - w - 14; if (y + hh > innerHeight - 8) y = e.clientY - hh - 14; dica.style.left = Math.max(8, x) + 'px'; dica.style.top = Math.max(8, y) + 'px'; };
-  const esconde = () => dica.style.opacity = 0;
+  let limparDestaque = null;
+  const esconde = () => { dica.hidden = true; if (limparDestaque) limparDestaque(); limparDestaque = null; };
+  function mostra(e, h, painel, limpar) {
+    if (limparDestaque && limparDestaque !== limpar) limparDestaque();
+    limparDestaque = limpar;
+    dica.innerHTML = h; dica.hidden = false;
+    const p = G.posicaoDica(e.clientX, e.clientY, dica.offsetWidth, dica.offsetHeight, { width: innerWidth, height: innerHeight }, painel);
+    dica.style.left = p.left + 'px'; dica.style.top = p.top + 'px';
+  }
+  document.addEventListener('scroll', esconde, true);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') esconde(); });
+  document.addEventListener('pointerdown', e => { if (!e.target.closest('.chart, svg.cols')) esconde(); });
+  addEventListener('blur', esconde);
 
   // colunas por ano no cartão: ano escolhido em cor cheia, demais claros; o ano parcial mais claro
   function spark(id, vals, cor, destaque, fmt, rot, parcial = -1) {
     const el = $(id), n = vals.length, ok = vals.filter(v => v != null && isFinite(v));
-    if (ok.length < 2) { el.innerHTML = ''; el.onmousemove = null; return; }
+    if (ok.length < 2) { el.innerHTML = ''; el.onpointermove = null; return; }
     const mx = Math.max(...ok, 0), mn = Math.min(...ok, 0), Y = v => 28 - (v - mn) / (mx - mn || 1) * 26, w = 120 / n;
     let g = '';
     vals.forEach((v, i) => {
@@ -111,11 +127,17 @@
     });
     if (mn < 0) g += `<line x1="0" x2="120" y1="${Y(0)}" y2="${Y(0)}" stroke="${cor}" stroke-width=".5" opacity=".6"/>`;
     el.innerHTML = g;
-    el.onmousemove = e => {
-      const r = el.getBoundingClientRect(), i = Math.max(0, Math.min(n - 1, Math.floor((e.clientX - r.left) / r.width * n)));
-      mostra(e, `<b>${rot(i)}</b><br>${vals[i] == null ? '—' : fmt(vals[i])}`);
+    const limpar = () => el.querySelectorAll('.spark-ativo').forEach(r => r.classList.remove('spark-ativo'));
+    el.onpointermove = e => {
+      const ponto = G.pontoLocal(el, e.clientX, e.clientY);
+      if (!ponto || ponto.x < 0 || ponto.x > 120 || ponto.y < 0 || ponto.y > 30) { esconde(); return; }
+      const i = Math.max(0, Math.min(n - 1, Math.floor(ponto.x / 120 * n)));
+      limpar();
+      const barra = [...el.querySelectorAll('rect')].find(r => Math.floor(+r.getAttribute('x') / w) === i);
+      barra?.classList.add('spark-ativo');
+      mostra(e, `<b>${rot(i)}</b><div class="tip-valor">${vals[i] == null ? '—' : fmt(vals[i])}</div>`, null, limpar);
     };
-    el.onmouseleave = esconde;
+    el.onpointerleave = el.onpointercancel = esconde;
   }
   function delta(id, v, f) {
     const e = $(id);
@@ -132,6 +154,7 @@
 
   // ---------- render ----------
   function render() {
+    esconde();
     fP.value = st.prod; fA.value = st.ano; dds.forEach(d => d.sync());
     document.querySelectorAll('#fFlx button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.f === st.flx));
     const { prod: p, flx: f, pais: c } = st, prod = P[p], Pr = periodo(st.ano);
@@ -217,9 +240,15 @@
   const rotMes = i => `${MES[i % 12]}/${A0 + Math.floor(i / 12)}`;
   function grafico(id, series, o) {
     const el = $(id), box = el.parentNode.getBoundingClientRect(), i0 = o.i0 || 0;
-    const W = Math.max(280, Math.round(box.width)), H = Math.max(150, Math.round(box.height)), m = { l: 50, r: 96, t: 16, b: 20 };
+    const W = Math.max(1, box.width), H = Math.max(1, box.height), m = { l: 50, r: W < 500 ? 86 : 100, t: 18, b: 28 };
     const vals = series.flatMap(s => s.v.slice(i0)).filter(v => v != null && isFinite(v));
-    if (!vals.length) { el.innerHTML = ''; return; }
+    if (!vals.length) {
+      el.onpointermove = el.onpointerdown = el.onpointerleave = el.onpointercancel = el.onfocus = el.onblur = el.onkeydown = null;
+      ['tabindex', 'aria-valuemin', 'aria-valuemax', 'aria-valuenow', 'aria-valuetext', 'aria-describedby'].forEach(a => el.removeAttribute(a));
+      el.setAttribute('role', 'img'); el.setAttribute('viewBox', `0 0 ${W} ${H}`);
+      el.innerHTML = `<text class="axis" x="${W / 2}" y="${H / 2}" text-anchor="middle">Sem dados suficientes neste recorte</text>`;
+      return;
+    }
     let mx = Math.max(...vals), mn = o.zero ? Math.min(...vals, 0) : Math.min(...vals);
     if (!o.zero) { const f = (mx - mn) * .12 || mx * .1; mn = Math.max(0, mn - f); }
     const passo = (() => { const r = (mx - mn) / 4, e = Math.pow(10, Math.floor(Math.log10(r || 1))), n = r / e; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * e; })();
@@ -262,20 +291,54 @@
     fins.sort((p, q) => p.y - q.y);
     for (let k = 1; k < fins.length; k++) { const prev = fins[k - 1].ty || fins[k - 1].y; if (fins[k].y - prev < 14) fins[k].ty = prev + 14; }
     for (const p of fins) g += `<circle cx="${p.x}" cy="${p.y}" r="3.5" fill="${p.cor}" stroke="#fff" stroke-width="1.5"/><text class="fim" x="${p.x + 7}" y="${(p.ty || p.y) + 4}" fill="${p.cor}">${p.txt}</text>`;
-    g += `<rect id="${id}Hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/><line id="${id}Cur" y1="${m.t}" y2="${H - m.b}" stroke="#605e5c" stroke-dasharray="2 3" opacity="0"/>`;
+    g += `<rect id="${id}Hit" x="${m.l}" y="${m.t}" width="${W - m.l - m.r}" height="${H - m.t - m.b}" fill="transparent"/>`
+      + `<g id="${id}Foco" class="chart-foco" display="none" pointer-events="none"><line id="${id}Cur" y1="${m.t}" y2="${H - m.b}" stroke="#605e5c" stroke-dasharray="3 3"/>`
+      + series.map((s, k) => `<circle id="${id}P${k}" r="4.5" fill="${s.cor}" stroke="#fff" stroke-width="2"/>`).join('') + '</g>';
     el.setAttribute('viewBox', `0 0 ${W} ${H}`); el.innerHTML = g;
-    const hit = $(id + 'Hit'), cur = $(id + 'Cur');
-    hit.onmousemove = e => {
-      const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width * W;
-      const i = Math.max(i0, Math.min(NM - 1, Math.round(i0 + (x - m.l) / (W - m.l - m.r) * (NM - 1 - i0))));
-      cur.setAttribute('x1', X(i)); cur.setAttribute('x2', X(i)); cur.setAttribute('opacity', 1);
-      let h = `<b>${rotMes(i)}</b> · ${o.titulo}<br>` + series.map(s => `<span style="color:${s.cor}">●</span> ${s.nome}: ${s.v[i] == null ? '—' : o.fmt(s.v[i], true)}`).join('<br>');
-      if (o.area && E.v[i] != null && I.v[i] != null) h += `<br><b>saldo: ${sinalT(E.v[i] - I.v[i])}</b>`;
-      mostra(e, h);
+    const cur = $(id + 'Cur'), foco = $(id + 'Foco');
+    const limpar = () => foco.setAttribute('display', 'none');
+    let selecionado = NM - 1;
+    el.setAttribute('role', 'slider'); el.setAttribute('tabindex', '0');
+    el.setAttribute('aria-valuemin', i0); el.setAttribute('aria-valuemax', NM - 1); el.setAttribute('aria-valuenow', selecionado);
+    el.setAttribute('aria-describedby', 'ajudaGrafico');
+    const descricao = i => `${rotMes(i)}, ${o.titulo}. ` + series.map(s => `${s.nome}: ${s.v[i] == null ? 'sem dado' : o.fmt(s.v[i], true)}`).join('. ');
+    el.setAttribute('aria-valuetext', descricao(selecionado));
+    function selecionar(i, evento) {
+      selecionado = i;
+      cur.setAttribute('x1', X(i)); cur.setAttribute('x2', X(i)); foco.setAttribute('display', 'inline');
+      series.forEach((s, k) => {
+        const dot = $(id + 'P' + k), v = s.v[i];
+        dot.setAttribute('visibility', v == null ? 'hidden' : 'visible');
+        if (v != null) { dot.setAttribute('cx', X(i)); dot.setAttribute('cy', Y(v)); }
+      });
+      el.setAttribute('aria-valuenow', i); el.setAttribute('aria-valuetext', descricao(i));
+      let h = `<div class="tip-titulo"><b>${rotMes(i)}</b><span>${o.titulo}</span></div>`
+        + series.map(s => `<div class="tip-linha"><span><i style="background:${s.cor}"></i>${s.nome}</span><b>${s.v[i] == null ? '—' : o.fmt(s.v[i], true)}</b></div>`).join('');
+      if (o.area && E.v[i] != null && I.v[i] != null) h += `<div class="tip-saldo"><span>Saldo</span><b>${sinalT(E.v[i] - I.v[i])}</b></div>`;
+      mostra(evento, h, el.closest('.panel').getBoundingClientRect(), limpar);
+    }
+    function percorrer(e) {
+      const ponto = G.pontoLocal(el, e.clientX, e.clientY);
+      if (!ponto || ponto.x < m.l || ponto.x > W - m.r || ponto.y < m.t || ponto.y > H - m.b) { esconde(); return; }
+      selecionar(G.indiceProximo(ponto.x, m.l, W - m.r, i0, NM - 1), e);
+    }
+    el.onpointermove = percorrer;
+    el.onpointerdown = e => { percorrer(e); if (e.pointerType === 'touch') el.setPointerCapture(e.pointerId); };
+    el.onpointerleave = el.onpointercancel = el.onblur = esconde;
+    const teclado = i => {
+      const tela = new DOMPoint(X(i), m.t + (H - m.t - m.b) / 2).matrixTransform(el.getScreenCTM());
+      selecionar(i, { clientX: tela.x, clientY: tela.y });
     };
-    hit.onmouseleave = () => { cur.setAttribute('opacity', 0); esconde(); };
+    el.onfocus = () => teclado(selecionado);
+    el.onkeydown = e => {
+      const passo = e.key === 'ArrowLeft' ? -1 : e.key === 'ArrowRight' ? 1 : 0;
+      if (!passo && !['Home', 'End'].includes(e.key)) return;
+      e.preventDefault();
+      teclado(e.key === 'Home' ? i0 : e.key === 'End' ? NM - 1 : Math.max(i0, Math.min(NM - 1, selecionado + passo)));
+    };
   }
   function renderSeries() {
+    esconde();
     const { prod: p, pais: c } = st, nomeC = c >= 0 ? ' · ' + D.paises[c] : '', doze = st.modo !== 1;
     const e = mensal(0, p, c), i = mensal(1, p, c);
     document.querySelectorAll('#fModo button').forEach(b => b.setAttribute('aria-pressed', +b.dataset.m === (doze ? 12 : 1)));
@@ -337,9 +400,6 @@
   $('buscaPais').oninput = e => { paisUI.busca = e.target.value; renderPaises(); };
   $('verPaises').onclick = () => { paisUI.todos = !paisUI.todos; renderPaises(); };
   $('limpaPais').onclick = () => { st.pais = -1; render(); $('buscaPais').focus(); };
-  function aparar(el) { // tela única: mostra só as linhas que cabem
-    while (el.children.length > 3 && el.scrollHeight > el.clientHeight + 1) el.lastElementChild.remove();
-  }
   function renderUfs(J) {
     const f = st.flx, loc = porLocal(IU, f, st.prod, J);
     $('ufSub').textContent = `Brasil · todos os países · ${f ? 'UF do importador' : 'UF produtora'} · maiores em volume, ${periodo(st.ano).rot}`;
@@ -347,7 +407,6 @@
     const ord = [...loc.entries()].filter(([, x]) => x.t > 0).sort((x, y) => y[1].t - x[1].t).slice(0, 10), mx = ord.length ? ord[0][1].t : 1;
     const sig = n => ({ 'Minas Gerais': 'MG', 'São Paulo': 'SP', 'Rio de Janeiro': 'RJ', 'Espírito Santo': 'ES', 'Paraná': 'PR', 'Santa Catarina': 'SC', 'Rio Grande do Sul': 'RS', 'Bahia': 'BA', 'Pará': 'PA', 'Maranhão': 'MA', 'Ceará': 'CE', 'Pernambuco': 'PE', 'Goiás': 'GO', 'Mato Grosso': 'MT', 'Mato Grosso do Sul': 'MS', 'Amazonas': 'AM', 'Distrito Federal': 'DF', 'Paraíba': 'PB', 'Rio Grande do Norte': 'RN', 'Alagoas': 'AL', 'Sergipe': 'SE', 'Piauí': 'PI', 'Tocantins': 'TO', 'Rondônia': 'RO', 'Acre': 'AC', 'Amapá': 'AP', 'Roraima': 'RR', 'Não Declarada': 'N/D', 'Mercadoria Nacionalizada': 'Nac.', 'Reexportação': 'Reex.' }[n] || n.slice(0, 5));
     $('ufs').innerHTML = ord.length ? ord.map(([k, x]) => `<div class="linha" title="${D.ufs[k]}"><span class="n">${sig(D.ufs[k])}</span><span class="trilho"><i style="width:${(x.t / mx * 55).toFixed(1)}%;background:#744ec2"></i><b>${pp(x.t / tot)}</b><em>${ton(x.t)}</em></span></div>`).join('') : '<div class="panel-foot">Sem dado no período.</div>';
-    aparar($('ufs'));
   }
 
   $('btnSobre').onclick = () => $('sobre').showModal();
@@ -356,7 +415,11 @@
     $('maisIndicadores').setAttribute('aria-expanded', String(aberto));
     $('maisIndicadores').textContent = aberto ? 'Menos indicadores' : 'Mais indicadores';
   };
-  let tRes; addEventListener('resize', () => { clearTimeout(tRes); tRes = setTimeout(render, 120); });
   render();
+  let frameResize;
+  const observarGraficos = new ResizeObserver(() => {
+    esconde(); cancelAnimationFrame(frameResize); frameResize = requestAnimationFrame(renderSeries);
+  });
+  document.querySelectorAll('.chart').forEach(el => observarGraficos.observe(el));
   window.PAINEL = { st, render };
 })();

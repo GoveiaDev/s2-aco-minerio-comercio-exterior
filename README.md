@@ -149,12 +149,17 @@ O notebook chama o mesmo `exportar.py` da atualização automática.
 ```powershell
 .venv/Scripts/python -m unittest discover -s tests -v
 node --check painel/app.js
+node --test tests/test_interacao.cjs
 ```
 
 Os testes verificam precisão em operações pequenas, agregação de SH4, preço ponderado,
 exportação sem mudanças e criação da pasta de coleta. A API é simulada nesses testes.
 Na interface, conferir 2015 sem base anterior, busca fora dos 20 maiores, seleção e
 limpeza de país por teclado, escopo nacional, modo mensal e layout a 390 e 1440 pixels.
+Os testes de interação cobrem conversão de coordenadas SVG com zoom e rolagem,
+seleção do mês mais próximo e limites dos tooltips. Os gráficos também aceitam
+setas, Home, End e Escape. Em janelas baixas, a página rola para preservar a
+legibilidade dos gráficos e das linhas da tabela.
 
 ---
 Ramon Goveia · [linkedin.com/in/ramon-goveia-92266443](https://www.linkedin.com/in/ramon-goveia-92266443) · projeto S2 · dados aplicados ao mercado da indústria pesada
