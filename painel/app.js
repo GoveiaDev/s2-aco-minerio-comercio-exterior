@@ -1,4 +1,12 @@
 (() => {
+  // Em notebooks pequenos, ajustar o relatório inteiro preserva o espaço dos
+  // gráficos. Tooltip e diálogo ficam fora deste contêiner escalado.
+  function ajustarJanela() {
+    const escala = innerWidth >= 1000 && innerHeight >= 560 ? Math.min(1, innerWidth / 1280, innerHeight / 680) : 1;
+    document.documentElement.style.setProperty('--escala-painel', escala);
+  }
+  ajustarJanela();
+  addEventListener('resize', ajustarJanela);
   const D = window.DADOS, G = window.GraficoInteracao, $ = id => document.getElementById(id);
   const A0 = D.ano0, UA = D.ultimo.ano, UM = D.ultimo.mes, NM = (UA - A0) * 12 + UM; // meses com dado
   const P = D.produtos, nP = P.length, CHINA = D.paises.indexOf('China');

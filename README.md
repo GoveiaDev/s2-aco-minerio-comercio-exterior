@@ -158,8 +158,9 @@ Na interface, conferir 2015 sem base anterior, busca fora dos 20 maiores, seleç
 limpeza de país por teclado, escopo nacional, modo mensal e layout a 390 e 1440 pixels.
 Os testes de interação cobrem conversão de coordenadas SVG com zoom e rolagem,
 seleção do mês mais próximo e limites dos tooltips. Os gráficos também aceitam
-setas, Home, End e Escape. Em janelas baixas, a página rola para preservar a
-legibilidade dos gráficos e das linhas da tabela.
+setas, Home, End e Escape. No computador (janela a partir de 1000 × 560 pixels),
+todos os painéis cabem na área visível, sem rolagem da página. Apenas as listas
+extensas têm rolagem interna. Em telas menores, os painéis seguem em coluna.
 
 ---
 Ramon Goveia · [linkedin.com/in/ramon-goveia-92266443](https://www.linkedin.com/in/ramon-goveia-92266443) · projeto S2 · dados aplicados ao mercado da indústria pesada

@@ -11,7 +11,7 @@
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="tema.css">
 <style>
-  /* Relatório responsivo: preservar espaço de leitura mesmo com zoom. */
+  /* Relatório responsivo, com visão completa na janela do computador. */
   .faixa-in{max-width:none;padding:9px 16px;gap:8px 20px}.faixa h1{font-size:18px}
   .slicer select{height:28px}.botoes{height:28px}
   .info{background:transparent;border:1px solid #3a4f78;color:var(--faixa-texto);border-radius:4px;height:28px;padding:0 10px;font-size:12px}
@@ -88,6 +88,7 @@
   #pauta .trilho{display:grid;grid-template-columns:minmax(8px,1fr) 70px 62px;height:auto;min-height:20px}
   .barra-pauta{min-width:0}.barra-pauta i{max-width:100%}
   .mais-indicadores{display:none}
+  .painel-janela{display:contents}
   @media(max-width:560px){
     .faixa-in{padding:10px 12px}.faixa h1{font-size:16px}.faixa .meta{font-size:11px}
     .slicers{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -107,9 +108,46 @@
     .pais-btn{min-height:40px}.pais-ferramentas input,.pais-ferramentas button{min-height:40px}
     .rodape{flex-wrap:wrap}
   }
+  /* Distribuir a altura disponível entre os visuais, sem rolar a página.
+     Listas extensas mantêm sua própria rolagem, sem perder registros. */
+  @media(min-width:1000px) and (min-height:560px){
+    html,body{height:100%;overflow:hidden}
+    body{height:100dvh;display:flex;flex-direction:column}
+    .painel-janela{display:flex;flex-direction:column;flex:none;zoom:var(--escala-painel,1);width:calc(100vw / var(--escala-painel,1));height:calc(100dvh / var(--escala-painel,1));min-height:0}
+    .faixa-in{grid-template-columns:minmax(240px,1fr) auto;padding:7px 12px;gap:6px 14px}
+    .faixa h1{font-size:16px}.faixa .meta{font-size:10.5px}
+    .slicers{gap:8px;flex-wrap:nowrap}.dd-btn{min-width:140px;font-size:11.5px}
+    .filtro-pais{padding:0 12px 5px;font-size:10.5px;min-height:20px}
+    .filtro-pais button{padding:1px 6px}
+    main.tela{flex:1 1 auto;min-height:0;padding:6px 10px;gap:6px}
+    .kpis{grid-template-columns:repeat(5,minmax(0,1fr)) minmax(0,1.5fr);gap:6px}
+    .kpi{padding:6px 10px 5px;gap:1px}.kpi label{font-size:10.5px}
+    .kpi strong{font-size:clamp(19px,1.6vw,25px)}.vrow{gap:3px 6px}
+    .kpi small{font-size:10.5px;margin-bottom:3px}.kpi svg.cols{height:18px;min-height:18px}
+    .delta{font-size:10px;padding:1px 5px}.anos{font-size:8px}
+    .readout{padding:4px 10px;font-size:11px}
+    .grid{flex:1 1 auto;min-height:0;gap:6px;grid-template-rows:minmax(0,1fr) minmax(0,1.05fr)}
+    .panel{padding:7px 10px}.panel-head{margin-bottom:4px;gap:6px}.panel-head p{font-size:10.5px}
+    .panel h2{font-size:13px}.legend{font-size:10px;gap:3px 10px}
+    .chart{min-height:0}
+    .v-serie{grid-column:span 7}.v-preco{grid-column:span 5}
+    .v-pauta{grid-column:span 4}.v-paises{grid-column:span 5;height:auto}.v-ufs{grid-column:span 3}
+    .v-pauta,.v-ufs{min-height:0}.lista{gap:1px}
+    #pauta .trilho{min-height:17px}.barras .trilho{height:16px}.barras .trilho i{height:11px}
+    .pais-ferramentas{gap:5px;margin:3px 0 5px;font-size:10px}
+    .pais-ferramentas input{flex-basis:90px;padding:3px 6px}.pais-ferramentas button{padding:3px 6px}
+    .tabela-box{min-height:0;max-height:none}th{padding:4px 5px}td{padding:3px 5px}
+    .rodape{font-size:9.5px;gap:6px}
+  }
+  @media(min-width:1000px) and (max-height:680px) and (min-height:560px){
+    .kpi strong{font-size:20px}.kpi svg.cols{height:14px;min-height:14px}
+    .faixa h1{font-size:15px}.panel-head p{font-size:10px}
+    .panel{padding:6px 9px}.barras .n{font-size:11px}.lista{gap:1px}
+  }
 </style>
 </head>
 <body>
+<div class="painel-janela">
 <header class="faixa">
   <div class="faixa-in">
     <div>
@@ -154,6 +192,7 @@
   </div>
   <div class="rodape"><span id="escopo">—</span><span><b>Ramon Goveia</b> · S2 · <a href="https://github.com/GoveiaDev/s2-aco-minerio-comercio-exterior">código e notebook</a> · <a href="https://www.linkedin.com/in/ramon-goveia-92266443">LinkedIn</a></span></div>
 </main>
+</div>
 <dialog id="sobre" aria-labelledby="sobreTit">
   <h2 id="sobreTit">Como funciona — e o que este painel não permite afirmar</h2>
   <ul class="method">
@@ -169,6 +208,6 @@
 <div class="tooltip" id="dica" role="tooltip" hidden></div>
 <script src="dados.js"></script>
 <script src="interacao.js"></script>
-<script src="app.js"></script>
+<script src="app.js?v=20261117"></script>
 </body>
 </html>
