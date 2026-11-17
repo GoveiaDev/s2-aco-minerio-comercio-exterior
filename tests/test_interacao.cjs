@@ -1,10 +1,22 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { pontoLocal, indiceProximo, posicaoDica } = require('../painel/interacao.js');
+const { pontoLocal, indiceProximo, posicaoDica, pagina } = require('../painel/interacao.js');
 
 function svgEscalado(escala, left, top) {
   return { getScreenCTM: () => ({ inverse: () => ({ a: 1 / escala, b: 0, c: 0, d: 1 / escala, e: -left / escala, f: -top / escala }) }) };
 }
+
+test('paginação alcança todos os países sem repetição e se ajusta ao filtro', () => {
+  const vistos = [];
+  for (let i = 0; i < 12; i++) {
+    const p = pagina(57, i, 5);
+    for (let k = p.inicio; k < p.fim; k++) vistos.push(k);
+  }
+  assert.deepEqual(vistos, Array.from({ length: 57 }, (_, i) => i));
+  assert.deepEqual(pagina(1, 11, 5), { indice: 0, paginas: 1, inicio: 0, fim: 1 });
+  assert.deepEqual(pagina(0, 5, 0), { indice: 0, paginas: 1, inicio: 0, fim: 0 });
+  assert.equal(pagina(57, 11, 8).fim, 57);
+});
 
 test('seleciona o mesmo mês com SVG centralizado, zoom e página rolada', () => {
   // Junho/2024 é o mês 113 da série iniciada em janeiro/2015.

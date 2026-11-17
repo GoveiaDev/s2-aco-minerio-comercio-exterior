@@ -38,5 +38,12 @@
     return { left: limitar(left, minX, Math.max(minX, maxX)), top: limitar(top, minY, Math.max(minY, maxY)) };
   }
 
-  return { pontoLocal, indiceProximo, posicaoDica };
+  function pagina(total, atual, capacidade) {
+    const tamanho = Math.max(1, Math.floor(capacidade));
+    const paginas = Math.max(1, Math.ceil(total / tamanho));
+    const indice = limitar(atual, 0, paginas - 1);
+    return { indice, paginas, inicio: indice * tamanho, fim: Math.min(total, (indice + 1) * tamanho) };
+  }
+
+  return { pontoLocal, indiceProximo, posicaoDica, pagina };
 });

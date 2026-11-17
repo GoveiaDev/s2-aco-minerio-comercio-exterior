@@ -64,7 +64,7 @@
   .barras .n{font-size:12px;color:var(--texto);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:right}.barras .linha.sel .n{font-weight:700}
   .barras .trilho{display:flex;align-items:center;gap:6px;height:17px;min-width:0}.barras .trilho i{display:block;height:13px;border-radius:0 2px 2px 0;min-width:2px;flex:none}
   .barras .trilho b{font-size:11.5px;font-weight:600;white-space:nowrap;color:var(--texto)}.barras .trilho em{font-style:normal;font-size:10.5px;color:var(--texto-2);white-space:nowrap}
-  .tabela-box{overflow:auto;flex:1 1 auto;min-height:180px;border-top:1px solid var(--borda);isolation:isolate;scrollbar-gutter:stable}
+  .tabela-box{--altura-linha:24px;overflow:hidden;flex:1 1 auto;min-height:180px;border-top:1px solid var(--borda);isolation:isolate}
   table{font-size:11.5px;border-collapse:separate;border-spacing:0}th{padding:7px 6px;z-index:3}td{padding:6px}
   tbody tr{cursor:pointer}tbody tr:hover{background:#f3f2f1}tbody tr.sel{background:var(--sel)}
   td.barra-cel{position:relative;min-width:92px}td.barra-cel i{position:absolute;right:6px;top:4px;bottom:4px;background:rgba(17,141,255,.22);border-radius:2px}td.barra-cel span{position:relative}
@@ -84,6 +84,15 @@
   .pais-ferramentas button{padding:4px 8px;border:1px solid var(--borda-forte);border-radius:4px;background:#fff;color:var(--azul-esc)}
   .pais-btn{border:0;background:transparent;color:var(--azul-esc);text-align:left;padding:2px 0;font:inherit}
   .pais-btn[aria-pressed="true"]{font-weight:700}
+  .tabela-box table{table-layout:fixed;height:auto}.tabela-box th:first-child{width:28%}.tabela-box th:nth-child(2){width:20%}.tabela-box th:nth-child(3){width:19%}.tabela-box th:nth-child(4){width:20%}.tabela-box th:last-child{width:13%}
+  .tabela-box tbody tr{height:var(--altura-linha)}.tabela-box td{overflow:hidden;text-overflow:ellipsis}.tabela-box td.barra-cel{min-width:0}
+  .tabela-box tbody td{padding-top:0;padding-bottom:0}
+  .tabela-box .pais-btn{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0;line-height:20px}
+  .tabela-box tfoot td:first-child{white-space:normal;line-height:14px}
+  .paginacao-pais{display:flex;align-items:center;gap:5px;white-space:nowrap}.paginacao-pais button{width:28px;height:28px;padding:0;font-size:17px}
+  .paginacao-pais button:disabled{opacity:.35;cursor:default}.pais-ferramentas #contagemPaises{font-variant-numeric:tabular-nums;color:var(--texto-2)}
+  .pais-cabecalho{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none}.pais-cabecalho .pais-ferramentas{flex:1;min-width:0;margin:0;justify-content:flex-end}.pais-cabecalho input{max-width:190px}
+  .pais-sub{font-size:11px;color:var(--texto-2);margin:3px 0 6px;flex:none}
   #pauta .linha{grid-template-columns:minmax(95px,.9fr) minmax(0,1.4fr)}
   #pauta .trilho{display:grid;grid-template-columns:minmax(8px,1fr) 70px 62px;height:auto;min-height:20px}
   .barra-pauta{min-width:0}.barra-pauta i{max-width:100%}
@@ -106,6 +115,8 @@
     #pauta .barra-pauta{grid-column:1/-1;grid-row:2}
     #pauta .trilho b{font-size:11px}#pauta .trilho em{font-size:10px}
     .pais-btn{min-height:40px}.pais-ferramentas input,.pais-ferramentas button{min-height:40px}
+    .tabela-box{--altura-linha:48px}.tabela-box table{font-size:10.5px}.tabela-box th,.tabela-box td{padding-left:3px;padding-right:3px}
+    .pais-cabecalho{flex-wrap:wrap;gap:6px}.pais-cabecalho h2{width:100%}.pais-cabecalho input{max-width:none}
     .rodape{flex-wrap:wrap}
   }
   /* Distribuir a altura disponível entre os visuais, sem rolar a página.
@@ -115,34 +126,34 @@
     body{height:100dvh;display:flex;flex-direction:column}
     .painel-janela{display:flex;flex-direction:column;flex:none;zoom:var(--escala-painel,1);width:calc(100vw / var(--escala-painel,1));height:calc(100dvh / var(--escala-painel,1));min-height:0}
     .faixa-in{grid-template-columns:minmax(240px,1fr) auto;padding:7px 12px;gap:6px 14px}
-    .faixa h1{font-size:16px}.faixa .meta{font-size:10.5px}
-    .slicers{gap:8px;flex-wrap:nowrap}.dd-btn{min-width:140px;font-size:11.5px}
-    .filtro-pais{padding:0 12px 5px;font-size:10.5px;min-height:20px}
+    .faixa h1{font-size:17px}.faixa .meta{font-size:11px;display:inline}
+    .slicers{gap:8px;flex-wrap:nowrap}.dd-btn{min-width:140px;font-size:12px}
+    .filtro-pais{padding:0;font-size:11px;min-height:18px;display:inline-flex;margin-left:10px}
     .filtro-pais button{padding:1px 6px}
     main.tela{flex:1 1 auto;min-height:0;padding:6px 10px;gap:6px}
     .kpis{grid-template-columns:repeat(5,minmax(0,1fr)) minmax(0,1.5fr);gap:6px}
-    .kpi{padding:6px 10px 5px;gap:1px}.kpi label{font-size:10.5px}
-    .kpi strong{font-size:clamp(19px,1.6vw,25px)}.vrow{gap:3px 6px}
-    .kpi small{font-size:10.5px;margin-bottom:3px}.kpi svg.cols{height:18px;min-height:18px}
-    .delta{font-size:10px;padding:1px 5px}.anos{font-size:8px}
-    .readout{padding:4px 10px;font-size:11px}
-    .grid{flex:1 1 auto;min-height:0;gap:6px;grid-template-rows:minmax(0,1fr) minmax(0,1.05fr)}
-    .panel{padding:7px 10px}.panel-head{margin-bottom:4px;gap:6px}.panel-head p{font-size:10.5px}
-    .panel h2{font-size:13px}.legend{font-size:10px;gap:3px 10px}
+    .kpi{padding:6px 10px 5px;gap:1px}.kpi label{font-size:11.5px}
+    .kpi strong{font-size:clamp(22px,1.7vw,27px)}#kTop{font-size:clamp(18px,1.4vw,23px)}.vrow{gap:3px 6px}
+    .kpi small{font-size:11px;margin-bottom:3px}.kpi svg.cols{height:18px;min-height:18px}
+    .delta{font-size:10.5px;padding:1px 5px}.anos{font-size:9px}
+    .readout{padding:4px 10px;font-size:11.5px}
+    .grid{flex:1 1 auto;min-height:0;gap:6px;grid-template-rows:minmax(0,1.12fr) minmax(0,1fr)}
+    .panel{padding:7px 10px}.panel-head{margin-bottom:4px;gap:6px}.panel-head p{font-size:11px}
+    .panel h2{font-size:14px}.legend{font-size:11px;gap:3px 10px}
     .chart{min-height:0}
     .v-serie{grid-column:span 7}.v-preco{grid-column:span 5}
     .v-pauta{grid-column:span 4}.v-paises{grid-column:span 5;height:auto}.v-ufs{grid-column:span 3}
     .v-pauta,.v-ufs{min-height:0}.lista{gap:1px}
     #pauta .trilho{min-height:17px}.barras .trilho{height:16px}.barras .trilho i{height:11px}
-    .pais-ferramentas{gap:5px;margin:3px 0 5px;font-size:10px}
+    .pais-ferramentas{gap:6px;margin:3px 0 5px;font-size:11px;flex-wrap:nowrap}
     .pais-ferramentas input{flex-basis:90px;padding:3px 6px}.pais-ferramentas button{padding:3px 6px}
-    .tabela-box{min-height:0;max-height:none}th{padding:4px 5px}td{padding:3px 5px}
-    .rodape{font-size:9.5px;gap:6px}
+    .tabela-box{min-height:0;max-height:none}table{font-size:12px}th{padding:3px 5px}td{padding:1px 5px}
+    .pais-cabecalho .pais-ferramentas{margin:0}.pais-sub{margin:2px 0 5px}
+    .rodape{font-size:10px;gap:6px}
   }
   @media(min-width:1000px) and (max-height:680px) and (min-height:560px){
-    .kpi strong{font-size:20px}.kpi svg.cols{height:14px;min-height:14px}
-    .faixa h1{font-size:15px}.panel-head p{font-size:10px}
-    .panel{padding:6px 9px}.barras .n{font-size:11px}.lista{gap:1px}
+    .kpi svg.cols{height:14px;min-height:14px}
+    .panel{padding:6px 9px}.lista{gap:1px}
   }
 </style>
 </head>
@@ -153,6 +164,7 @@
     <div>
       <h1>Aço e minério · comércio exterior do Brasil</h1>
       <div class="meta" id="faixaMeta">—</div>
+      <div class="filtro-pais"><span id="paisAtivo" aria-live="polite">Brasil · todos os países</span><button type="button" id="limpaPais" hidden>Limpar país</button></div>
     </div>
     <div class="slicers" role="group" aria-label="Filtros">
       <div class="slicer dd" id="dd-fProd"><label for="fProd">Produto</label><select id="fProd"></select></div>
@@ -161,7 +173,6 @@
       <div class="slicer"><button type="button" class="info" id="btnSobre">ⓘ Sobre os dados</button></div>
     </div>
   </div>
-  <div class="filtro-pais"><span id="paisAtivo" aria-live="polite">Brasil · todos os países</span><button type="button" id="limpaPais" hidden>Limpar país</button></div>
 </header>
 <main class="tela">
   <p class="sr-only" id="ajudaGrafico">Use as setas para percorrer os meses do gráfico, Home e End para ir ao início e ao fim, e Escape para ocultar os detalhes.</p>
@@ -184,10 +195,11 @@
       <div class="chart"><svg id="svgPreco" role="img" aria-label="Preço médio FOB por tonelada, média móvel de 12 meses"></svg></div></section>
     <section class="panel v-pauta"><div class="panel-head"><div><h2 id="tPauta">A pauta em US$</h2><p id="pautaSub">—</p></div></div>
       <div class="barras lista" id="pauta"></div></section>
-    <section class="panel v-paises"><div class="panel-head"><div><h2 id="tPaises">Países</h2><p id="paisesSub">—</p></div></div>
-      <div class="pais-ferramentas"><input type="search" id="buscaPais" aria-label="Buscar país" placeholder="Buscar país" aria-controls="tPaisCorpo"><span id="contagemPaises" aria-live="polite"></span><button type="button" id="verPaises" aria-expanded="false" aria-controls="tPaisCorpo">Ver todos</button></div>
+    <section class="panel v-paises"><div class="pais-cabecalho"><h2 id="tPaises">Países</h2>
+      <div class="pais-ferramentas"><input type="search" id="buscaPais" aria-label="Buscar país" placeholder="Buscar país" aria-controls="tPaisCorpo"><nav class="paginacao-pais" aria-label="Páginas de países"><span id="contagemPaises" aria-live="polite"></span><button type="button" id="paisAnterior" aria-label="Página anterior de países" aria-controls="tPaisCorpo">‹</button><button type="button" id="paisProximo" aria-label="Próxima página de países" aria-controls="tPaisCorpo">›</button></nav></div>
+      </div><p id="paisesSub" class="pais-sub">—</p>
       <div class="tabela-box"><table><thead><tr><th>País</th><th>Volume</th><th>vs ano ant.</th><th>Participação</th><th>US$/t</th></tr></thead><tbody id="tPaisCorpo"></tbody><tfoot id="tPaisTotal"></tfoot></table></div></section>
-    <section class="panel v-ufs"><div class="panel-head"><div><h2>Estados</h2><p id="ufSub">—</p></div></div>
+    <section class="panel v-ufs"><div class="panel-head"><div><h2 id="tUfs">Estados</h2><p id="ufSub">—</p></div></div>
       <div class="barras estreito lista" id="ufs"></div></section>
   </div>
   <div class="rodape"><span id="escopo">—</span><span><b>Ramon Goveia</b> · S2 · <a href="https://github.com/GoveiaDev/s2-aco-minerio-comercio-exterior">código e notebook</a> · <a href="https://www.linkedin.com/in/ramon-goveia-92266443">LinkedIn</a></span></div>
@@ -195,6 +207,7 @@
 </div>
 <dialog id="sobre" aria-labelledby="sobreTit">
   <h2 id="sobreTit">Como funciona — e o que este painel não permite afirmar</h2>
+  <p id="contextoHistorico"></p>
   <ul class="method">
     <li><b>Fonte:</b> Comex Stat, do Ministério do Desenvolvimento, Indústria, Comércio e Serviços (MDIC), pela API oficial. Exportação e importação mensal de janeiro de 2015 a outubro de 2026, por posição SH4, país e estado. Volume em toneladas líquidas, valor em US$ FOB.</li>
     <li><b>Produtos:</b> 30 posições SH4 em 9 produtos. Aço plano = 7208 a 7212, 7219, 7220, 7225 e 7226. Aço longo = 7213 a 7217, 7221, 7222, 7227 e 7228. Tubos = 7304 a 7306. Alumínio laminado e extrudado = 7604 a 7607.</li>
@@ -207,7 +220,7 @@
 </dialog>
 <div class="tooltip" id="dica" role="tooltip" hidden></div>
 <script src="dados.js"></script>
-<script src="interacao.js"></script>
-<script src="app.js?v=20261117"></script>
+<script src="interacao.js?v=20261117-2"></script>
+<script src="app.js?v=20261117-3"></script>
 </body>
 </html>

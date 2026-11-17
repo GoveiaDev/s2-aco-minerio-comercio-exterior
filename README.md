@@ -154,13 +154,15 @@ node --test tests/test_interacao.cjs
 
 Os testes verificam precisão em operações pequenas, agregação de SH4, preço ponderado,
 exportação sem mudanças e criação da pasta de coleta. A API é simulada nesses testes.
-Na interface, conferir 2015 sem base anterior, busca fora dos 20 maiores, seleção e
+Na interface, conferir 2015 sem base anterior, busca em todos os países, seleção e
 limpeza de país por teclado, escopo nacional, modo mensal e layout a 390 e 1440 pixels.
 Os testes de interação cobrem conversão de coordenadas SVG com zoom e rolagem,
-seleção do mês mais próximo e limites dos tooltips. Os gráficos também aceitam
+seleção do mês mais próximo, limites dos tooltips e paginação sem perda de países. Os gráficos também aceitam
 setas, Home, End e Escape. No computador (janela a partir de 1000 × 560 pixels),
-todos os painéis cabem na área visível, sem rolagem da página. Apenas as listas
-extensas têm rolagem interna. Em telas menores, os painéis seguem em coluna.
+todos os painéis cabem na área visível, sem rolagem da página. A tabela de países
+mostra páginas de linhas completas, dimensionadas conforme a altura disponível,
+com busca sobre todos os países e total nacional preservado. Listas de produtos
+e estados mantêm rolagem interna quando necessário. Em telas menores, os painéis seguem em coluna.
 
 ---
 Ramon Goveia · [linkedin.com/in/ramon-goveia-92266443](https://www.linkedin.com/in/ramon-goveia-92266443) · projeto S2 · dados aplicados ao mercado da indústria pesada
